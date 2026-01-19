@@ -15,7 +15,8 @@ ext_modules = [
         ['nbody.cpp'],
         include_dirs=[pybind11.get_include()],
         language='c++',
-        extra_compile_args=['-O3', '-std=c++11'],
+        extra_compile_args=['-O3', '-std=c++11', '-march=native', '-fopenmp'],
+        extra_link_args=['-fopenmp'],
     ),
 ]
 

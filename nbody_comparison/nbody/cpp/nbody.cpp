@@ -35,14 +35,22 @@ public:
         // Zero out accelerations
         std::fill(accelerations.begin(), accelerations.end(), 0.0);
         
-        // O(N²) pairwise force calculation
+        // PARALLEL O(N²) pairwise force calculation
+        #pragma omp parallel for schedule(dynamic, 32)
         for (int i = 0; i < n_particles; i++) {
+            double ax = 0.0, ay = 0.0, az = 0.0;
+            
+            // Cache particle i's position
+            double px_i = positions[i*3 + 0];
+            double py_i = positions[i*3 + 1];
+            double pz_i = positions[i*3 + 2];
+            
             for (int j = 0; j < n_particles; j++) {
                 if (i != j) {
                     // Displacement vector
-                    double dx = positions[j*3 + 0] - positions[i*3 + 0];
-                    double dy = positions[j*3 + 1] - positions[i*3 + 1];
-                    double dz = positions[j*3 + 2] - positions[i*3 + 2];
+                    double dx = positions[j*3 + 0] - px_i;
+                    double dy = positions[j*3 + 1] - py_i;
+                    double dz = positions[j*3 + 2] - pz_i;
                     
                     // Distance with softening
                     double dist_sq = dx*dx + dy*dy + dz*dz + softening*softening;
@@ -52,11 +60,16 @@ public:
                     double inv_dist_cubed = 1.0 / (dist * dist_sq);
                     
                     // Accumulate acceleration
-                    accelerations[i*3 + 0] += G * masses[j] * dx * inv_dist_cubed;
-                    accelerations[i*3 + 1] += G * masses[j] * dy * inv_dist_cubed;
-                    accelerations[i*3 + 2] += G * masses[j] * dz * inv_dist_cubed;
+                    double factor = G * masses[j] * inv_dist_cubed;
+                    ax += factor * dx;
+                    ay += factor * dy;
+                    az += factor * dz;
                 }
             }
+            
+            accelerations[i*3 + 0] = ax;
+            accelerations[i*3 + 1] = ay;
+            accelerations[i*3 + 2] = az;
         }
     }
     
