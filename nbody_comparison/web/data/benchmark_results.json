@@ -1,0 +1,205 @@
+{
+  "timestamp": "2026-01-18 22:11:34",
+  "results": [
+    {
+      "implementation": "Python (NumPy)",
+      "n_particles": 10,
+      "n_steps": 1000,
+      "runtime": 0.03483997844159603,
+      "time_per_step": 3.483997844159603e-05,
+      "energy_drift": 2.2689106656123948e-05
+    },
+    {
+      "implementation": "C",
+      "n_particles": 10,
+      "n_steps": 1000,
+      "runtime": 0.0005505084991455078,
+      "time_per_step": 5.505084991455079e-07,
+      "energy_drift": 2.2689106629030234e-05
+    },
+    {
+      "implementation": "C++",
+      "n_particles": 10,
+      "n_steps": 1000,
+      "runtime": 0.0006501376628875732,
+      "time_per_step": 6.501376628875733e-07,
+      "energy_drift": 2.268910649356169e-05
+    },
+    {
+      "implementation": "Fortran (OpenMP)",
+      "n_particles": 10,
+      "n_steps": 1000,
+      "runtime": 0.014587080106139183,
+      "time_per_step": 1.4587080106139183e-05,
+      "energy_drift": 2.2689106629030234e-05
+    },
+    {
+      "implementation": "JAX (GPU)",
+      "n_particles": 10,
+      "n_steps": 1000,
+      "runtime": 0.08428074605762959,
+      "time_per_step": 8.428074605762959e-05,
+      "energy_drift": 0.001750976169214337
+    },
+    {
+      "implementation": "Python (NumPy)",
+      "n_particles": 50,
+      "n_steps": 1000,
+      "runtime": 0.22507182322442532,
+      "time_per_step": 0.00022507182322442531,
+      "energy_drift": 0.009340991605224983
+    },
+    {
+      "implementation": "C",
+      "n_particles": 50,
+      "n_steps": 1000,
+      "runtime": 0.014049435034394264,
+      "time_per_step": 1.4049435034394265e-05,
+      "energy_drift": 0.009340991605425774
+    },
+    {
+      "implementation": "C++",
+      "n_particles": 50,
+      "n_steps": 1000,
+      "runtime": 0.016630567610263824,
+      "time_per_step": 1.6630567610263826e-05,
+      "energy_drift": 0.009340991605074369
+    },
+    {
+      "implementation": "Fortran (OpenMP)",
+      "n_particles": 50,
+      "n_steps": 1000,
+      "runtime": 0.020064840093255043,
+      "time_per_step": 2.0064840093255042e-05,
+      "energy_drift": 0.009340991605425774
+    },
+    {
+      "implementation": "JAX (GPU)",
+      "n_particles": 50,
+      "n_steps": 1000,
+      "runtime": 0.09598690271377563,
+      "time_per_step": 9.598690271377564e-05,
+      "energy_drift": 0.02708409268884094
+    },
+    {
+      "implementation": "Python (NumPy)",
+      "n_particles": 100,
+      "n_steps": 1000,
+      "runtime": 1.256607348099351,
+      "time_per_step": 0.0012566073480993509,
+      "energy_drift": 0.022215053940575432
+    },
+    {
+      "implementation": "C",
+      "n_particles": 100,
+      "n_steps": 1000,
+      "runtime": 0.08482829108834267,
+      "time_per_step": 8.482829108834266e-05,
+      "energy_drift": 0.022215053940790545
+    },
+    {
+      "implementation": "C++",
+      "n_particles": 100,
+      "n_steps": 1000,
+      "runtime": 0.10140831209719181,
+      "time_per_step": 0.00010140831209719182,
+      "energy_drift": 0.022215053943276473
+    },
+    {
+      "implementation": "Fortran (OpenMP)",
+      "n_particles": 100,
+      "n_steps": 1000,
+      "runtime": 0.03362112492322922,
+      "time_per_step": 3.362112492322922e-05,
+      "energy_drift": 0.022215053940790545
+    },
+    {
+      "implementation": "JAX (GPU)",
+      "n_particles": 100,
+      "n_steps": 1000,
+      "runtime": 0.12537509202957153,
+      "time_per_step": 0.00012537509202957154,
+      "energy_drift": 0.046266104834982565
+    },
+    {
+      "implementation": "Python (NumPy)",
+      "n_particles": 500,
+      "n_steps": 1000,
+      "runtime": 27.46031954139471,
+      "time_per_step": 0.02746031954139471,
+      "energy_drift": 0.9343704813249667
+    },
+    {
+      "implementation": "C",
+      "n_particles": 500,
+      "n_steps": 1000,
+      "runtime": 1.3777889795601368,
+      "time_per_step": 0.0013777889795601368,
+      "energy_drift": 0.9351587036927501
+    },
+    {
+      "implementation": "C++",
+      "n_particles": 500,
+      "n_steps": 1000,
+      "runtime": 1.7049396727234125,
+      "time_per_step": 0.0017049396727234125,
+      "energy_drift": 0.9408391211127229
+    },
+    {
+      "implementation": "Fortran (OpenMP)",
+      "n_particles": 500,
+      "n_steps": 1000,
+      "runtime": 0.39386881701648235,
+      "time_per_step": 0.00039386881701648237,
+      "energy_drift": 0.9351587036927501
+    },
+    {
+      "implementation": "JAX (GPU)",
+      "n_particles": 500,
+      "n_steps": 1000,
+      "runtime": 0.0882165152579546,
+      "time_per_step": 8.82165152579546e-05,
+      "energy_drift": 0.13924868822357284
+    },
+    {
+      "implementation": "Python (NumPy)",
+      "n_particles": 1000,
+      "n_steps": 1000,
+      "runtime": 110.83536527492106,
+      "time_per_step": 0.11083536527492106,
+      "energy_drift": 4.331290175374025
+    },
+    {
+      "implementation": "C",
+      "n_particles": 1000,
+      "n_steps": 1000,
+      "runtime": 5.508469920605421,
+      "time_per_step": 0.005508469920605421,
+      "energy_drift": 3.94014215617834
+    },
+    {
+      "implementation": "C++",
+      "n_particles": 1000,
+      "n_steps": 1000,
+      "runtime": 6.62201077118516,
+      "time_per_step": 0.006622010771185159,
+      "energy_drift": 3.2220816926740983
+    },
+    {
+      "implementation": "Fortran (OpenMP)",
+      "n_particles": 1000,
+      "n_steps": 1000,
+      "runtime": 1.3727175313979387,
+      "time_per_step": 0.0013727175313979388,
+      "energy_drift": 3.94014215617834
+    },
+    {
+      "implementation": "JAX (GPU)",
+      "n_particles": 1000,
+      "n_steps": 1000,
+      "runtime": 0.0801622997969389,
+      "time_per_step": 8.01622997969389e-05,
+      "energy_drift": 3.3157150311960266
+    }
+  ]
+}
