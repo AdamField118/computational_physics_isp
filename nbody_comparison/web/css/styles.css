@@ -19,6 +19,8 @@
     --fortran-color: #ff00ff;
     --cpp-color: #ff8800;
     --c-color: #00ffff;
+    --rust-color: #ff6b35;
+    --julia-color: #9558b2;
     --python-color: #ff0000;
     
     --spacing-xs: 0.5rem;
@@ -219,6 +221,8 @@ body {
 .badge-fortran { background: rgba(255, 0, 255, 0.2); color: var(--fortran-color); }
 .badge-cpp { background: rgba(255, 136, 0, 0.2); color: var(--cpp-color); }
 .badge-c { background: rgba(0, 255, 255, 0.2); color: var(--c-color); }
+.badge-rust { background: rgba(255, 107, 53, 0.2); color: var(--rust-color); }
+.badge-julia { background: rgba(149, 88, 178, 0.2); color: var(--julia-color); }
 .badge-python { background: rgba(255, 0, 0, 0.2); color: var(--python-color); }
 
 /* Lists */

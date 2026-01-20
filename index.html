@@ -3,523 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Computational Physics ISP | Adam Field</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+    <title>Adam's Computational Physics Website</title>
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-latex.min.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            }
+        };
+    </script>
 </head>
 <body>
-    <!-- Hero Section -->
-    <header class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h1 class="main-title">Computational Physics</h1>
-                <h2 class="main-subtitle">Independent Study Project</h2>
-                <div class="hero-meta">
-                    <p class="student-info">Adam Field | Physics Major</p>
-                    <p class="institution">Worcester Polytechnic Institute</p>
-                    <p class="term">D-Term 2025-2026</p>
-                </div>
-            </div>
-        </div>
+
+    <header>
+        <h1>Computational Physics ISP</h1>
+        <h2>Adam Field</h2>
     </header>
-
-    <!-- Main Navigation -->
-    <nav class="main-nav">
-        <div class="container">
-            <a href="#about" class="nav-link">About</a>
-            <a href="#projects" class="nav-link">Projects</a>
-            <a href="#notes" class="nav-link">Notes</a>
-            <a href="#resources" class="nav-link">Resources</a>
-        </div>
+    
+    <nav>
+        <a href="./index.html">Home Page</a>
+        <a href="https://www.adamfield.org">Personal Website</a>
     </nav>
+    <div class="container">
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="container">
+        <aside class="sidebar">
+            <h2>Class Overview</h2>
+            <p>
+                <b>Title:</b> Computational Physics and FVM
+            </p>
+            <p>
+                <b>Level:</b> 4000 Physics
+            </p>
+            <p>
+                <b>Professor:</b> Dr. William Sanguinet
+            </p>
+            <p>
+                <b>Goals:</b> To develop modern computational physics techniques with an emphasis on Finite Volume Methods.
+            </p>
+        </aside>
 
-            <!-- About Section -->
-            <section id="about" class="section">
-                <h2 class="section-title">About This Independent Study</h2>
-                
-                <div class="about-grid">
-                    <div class="card highlight-card">
-                        <div class="card-icon">🎯</div>
-                        <h3>Mission</h3>
-                        <p>Explore high-performance computing techniques for physics simulations, combining theoretical understanding with practical implementation across multiple programming paradigms.</p>
-                    </div>
+        <section class="content">
+            <h2>Hello!</h2>
+            <p>
+                Below you can find projects, assignments and notes for this class.
+            </p>
 
-                    <div class="card">
-                        <div class="card-icon">🔬</div>
-                        <h3>Focus Areas</h3>
-                        <ul class="focus-list">
-                            <li>Numerical methods for differential equations</li>
-                            <li>GPU acceleration & parallel computing</li>
-                            <li>N-body gravitational simulations</li>
-                            <li>Quantum mechanics computational methods</li>
-                            <li>Monte Carlo techniques</li>
-                            <li>Performance optimization & benchmarking</li>
-                        </ul>
-                    </div>
+            <!-- Filter Dropdown -->
+            <section class="filter-section">
+                <label for="filter">Filter by Topic:</label>
+                <select id="filter" class="filter-select">
+                    <option value="all">All</option>
+                    <option value="Project">Projects</option>
+                </select>
+            </section>
 
-                    <div class="card">
-                        <div class="card-icon">🛠️</div>
-                        <h3>Technologies</h3>
-                        <div class="tech-badges">
-                            <span class="badge badge-python">Python</span>
-                            <span class="badge badge-jax">JAX</span>
-                            <span class="badge badge-fortran">Fortran</span>
-                            <span class="badge badge-c">C/C++</span>
-                            <span class="badge badge-gpu">CUDA</span>
-                            <span class="badge badge-web">Web (Three.js)</span>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-icon">📚</div>
-                        <h3>Course Structure</h3>
-                        <ul class="structure-list">
-                            <li><strong>Weekly Meetings:</strong> Discussion & code review</li>
-                            <li><strong>Textbook:</strong> Computational Physics by Newman</li>
-                            <li><strong>Projects:</strong> Hands-on implementations</li>
-                            <li><strong>Deliverables:</strong> Code, documentation, presentations</li>
-                        </ul>
-                    </div>
+            <section class="card-container" id="postsContainer">
+                <div class="loading" id="loadingIndicator">
+                    <i class="fas fa-spinner fa-spin"></i> Loading blog posts...
                 </div>
             </section>
 
-            <!-- Projects Section -->
-            <section id="projects" class="section">
-                <h2 class="section-title">Projects</h2>
+            <div class="hidden-measurer" id="measurer"></div>
 
-                <div class="projects-grid">
-                    <!-- Completed Project -->
-                    <div class="project-card status-complete">
-                        <div class="project-header">
-                            <div class="project-status">
-                                <span class="status-badge complete">✓ Complete</span>
-                            </div>
-                            <h3 class="project-title">N-Body Gravitational Simulation</h3>
-                            <p class="project-subtitle">Multi-Language Performance Comparison</p>
-                        </div>
-                        
-                        <div class="project-body">
-                            <p class="project-description">
-                                Implemented identical gravitational N-body simulations in JAX (GPU), Fortran, C++, C, and Python. 
-                                Benchmarked performance across 10-1000 particles, achieving 1384× speedup with GPU acceleration.
-                            </p>
-                            
-                            <div class="project-highlights">
-                                <div class="highlight-item">
-                                    <span class="highlight-label">Languages:</span>
-                                    <span class="highlight-value">5 implementations</span>
-                                </div>
-                                <div class="highlight-item">
-                                    <span class="highlight-label">Max Speedup:</span>
-                                    <span class="highlight-value">1384× (GPU)</span>
-                                </div>
-                                <div class="highlight-item">
-                                    <span class="highlight-label">Particles:</span>
-                                    <span class="highlight-value">10-1000</span>
-                                </div>
-                            </div>
-                            
-                            <div class="project-tech">
-                                <span class="tech-tag">JAX</span>
-                                <span class="tech-tag">Fortran</span>
-                                <span class="tech-tag">C++</span>
-                                <span class="tech-tag">C</span>
-                                <span class="tech-tag">OpenMP</span>
-                                <span class="tech-tag">CUDA</span>
-                            </div>
-                        </div>
-                        
-                        <div class="project-footer">
-                            <a href="nbody_comparison/web/index.html" class="btn btn-primary">View Project →</a>
-                            <a href="nbody_comparison/docs/results.md" class="btn btn-secondary">Read Analysis</a>
-                        </div>
-                    </div>
+        </section>
+    </div>
 
-                    <!-- Planned Project 1 -->
-                    <div class="project-card status-planned">
-                        <div class="project-header">
-                            <div class="project-status">
-                                <span class="status-badge planned">📋 Planned</span>
-                            </div>
-                            <h3 class="project-title">Quantum Mechanics Solver</h3>
-                            <p class="project-subtitle">1D & 2D Schrödinger Equation</p>
-                        </div>
-                        
-                        <div class="project-body">
-                            <p class="project-description">
-                                Numerical solution of time-independent Schrödinger equation for various potentials. 
-                                Visualization of wavefunctions and probability densities.
-                            </p>
-                            
-                            <div class="project-objectives">
-                                <h4>Objectives:</h4>
-                                <ul>
-                                    <li>Finite difference methods</li>
-                                    <li>Matrix diagonalization techniques</li>
-                                    <li>Eigenvalue solvers comparison</li>
-                                    <li>Interactive wavefunction visualization</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="project-tech">
-                                <span class="tech-tag">Python</span>
-                                <span class="tech-tag">NumPy</span>
-                                <span class="tech-tag">SciPy</span>
-                                <span class="tech-tag">Matplotlib</span>
-                            </div>
-                        </div>
-                        
-                        <div class="project-footer">
-                            <button class="btn btn-disabled" disabled>Coming Soon</button>
-                        </div>
-                    </div>
+    <div class="close-btn" id="closeBtn">
+        <i class="fas fa-times"></i>
+    </div>
 
-                    <!-- Planned Project 2 -->
-                    <div class="project-card status-planned">
-                        <div class="project-header">
-                            <div class="project-status">
-                                <span class="status-badge planned">📋 Planned</span>
-                            </div>
-                            <h3 class="project-title">Molecular Dynamics</h3>
-                            <p class="project-subtitle">Lennard-Jones Fluid Simulation</p>
-                        </div>
-                        
-                        <div class="project-body">
-                            <p class="project-description">
-                                Classical molecular dynamics simulation using Lennard-Jones potential. 
-                                Study phase transitions and thermodynamic properties.
-                            </p>
-                            
-                            <div class="project-objectives">
-                                <h4>Objectives:</h4>
-                                <ul>
-                                    <li>Periodic boundary conditions</li>
-                                    <li>Velocity Verlet integration</li>
-                                    <li>Temperature & pressure calculation</li>
-                                    <li>Radial distribution function analysis</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="project-tech">
-                                <span class="tech-tag">C++</span>
-                                <span class="tech-tag">CUDA</span>
-                                <span class="tech-tag">Python</span>
-                            </div>
-                        </div>
-                        
-                        <div class="project-footer">
-                            <button class="btn btn-disabled" disabled>Coming Soon</button>
-                        </div>
-                    </div>
-
-                    <!-- Planned Project 3 -->
-                    <div class="project-card status-planned">
-                        <div class="project-header">
-                            <div class="project-status">
-                                <span class="status-badge planned">📋 Planned</span>
-                            </div>
-                            <h3 class="project-title">Monte Carlo Methods</h3>
-                            <p class="project-subtitle">Ising Model & Statistical Physics</p>
-                        </div>
-                        
-                        <div class="project-body">
-                            <p class="project-description">
-                                Monte Carlo simulation of 2D Ising model. Explore phase transitions, critical phenomena, 
-                                and Metropolis algorithm efficiency.
-                            </p>
-                            
-                            <div class="project-objectives">
-                                <h4>Objectives:</h4>
-                                <ul>
-                                    <li>Metropolis-Hastings algorithm</li>
-                                    <li>Critical temperature determination</li>
-                                    <li>Autocorrelation analysis</li>
-                                    <li>Parallel tempering techniques</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="project-tech">
-                                <span class="tech-tag">JAX</span>
-                                <span class="tech-tag">NumPy</span>
-                                <span class="tech-tag">Fortran</span>
-                            </div>
-                        </div>
-                        
-                        <div class="project-footer">
-                            <button class="btn btn-disabled" disabled>Coming Soon</button>
-                        </div>
-                    </div>
-
-                    <!-- Placeholder for future project -->
-                    <div class="project-card status-future">
-                        <div class="project-header">
-                            <div class="project-status">
-                                <span class="status-badge future">💡 Future Work</span>
-                            </div>
-                            <h3 class="project-title">Additional Topics</h3>
-                            <p class="project-subtitle">To Be Determined</p>
-                        </div>
-                        
-                        <div class="project-body">
-                            <p class="project-description">
-                                Additional computational physics projects based on course progress and interests.
-                            </p>
-                            
-                            <div class="project-ideas">
-                                <h4>Potential Topics:</h4>
-                                <ul>
-                                    <li>Partial Differential Equations (Heat, Wave, Diffusion)</li>
-                                    <li>Fourier Analysis & Spectral Methods</li>
-                                    <li>Random Walks & Brownian Motion</li>
-                                    <li>Fluid Dynamics (Lattice Boltzmann)</li>
-                                    <li>Machine Learning for Physics</li>
-                                </ul>
-                            </div>
-                        </div>
-                        
-                        <div class="project-footer">
-                            <button class="btn btn-disabled" disabled>Ideas Welcome!</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Notes Section -->
-            <section id="notes" class="section">
-                <h2 class="section-title">Course Notes & Resources</h2>
-
-                <div class="notes-layout">
-                    <!-- Lecture Notes -->
-                    <div class="notes-column">
-                        <div class="card notes-card">
-                            <div class="card-header">
-                                <h3>📝 Lecture Notes</h3>
-                                <p class="card-subtitle">Weekly meeting summaries</p>
-                            </div>
-                            <div class="card-body">
-                                <div class="notes-list">
-                                    <div class="note-item placeholder">
-                                        <div class="note-header">
-                                            <span class="note-date">Week 1 - TBD</span>
-                                            <span class="note-tag">Introduction</span>
-                                        </div>
-                                        <p class="note-title">Course Overview & Setup</p>
-                                    </div>
-
-                                    <div class="note-item placeholder">
-                                        <div class="note-header">
-                                            <span class="note-date">Week 2 - TBD</span>
-                                            <span class="note-tag">Theory</span>
-                                        </div>
-                                        <p class="note-title">Numerical Integration Methods</p>
-                                    </div>
-
-                                    <div class="note-item placeholder">
-                                        <div class="note-header">
-                                            <span class="note-date">Week 3 - TBD</span>
-                                            <span class="note-tag">Practice</span>
-                                        </div>
-                                        <p class="note-title">GPU Programming Fundamentals</p>
-                                    </div>
-
-                                    <div class="notes-placeholder">
-                                        <p>📚 Notes will be added as the course progresses</p>
-                                    </div>
-                                </div>
-                                
-                                <button class="btn btn-secondary btn-full" disabled>Add New Note</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Textbook Progress -->
-                    <div class="notes-column">
-                        <div class="card notes-card">
-                            <div class="card-header">
-                                <h3>📖 Textbook Progress</h3>
-                                <p class="card-subtitle">Computational Physics by Newman</p>
-                            </div>
-                            <div class="card-body">
-                                <div class="textbook-progress">
-                                    <div class="chapter-item completed">
-                                        <div class="chapter-status">✓</div>
-                                        <div class="chapter-info">
-                                            <h4>Chapter 1: Introduction</h4>
-                                            <p>Python basics, NumPy, visualization</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="chapter-item in-progress">
-                                        <div class="chapter-status">⋯</div>
-                                        <div class="chapter-info">
-                                            <h4>Chapter 2: Python Programming</h4>
-                                            <p>Control flow, functions, modules</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="chapter-item">
-                                        <div class="chapter-status">○</div>
-                                        <div class="chapter-info">
-                                            <h4>Chapter 3: Graphics & Visualization</h4>
-                                            <p>Matplotlib, 2D/3D plotting</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="chapter-item">
-                                        <div class="chapter-status">○</div>
-                                        <div class="chapter-info">
-                                            <h4>Chapter 4: Accuracy & Speed</h4>
-                                            <p>Floating-point, optimization</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="chapter-item">
-                                        <div class="chapter-status">○</div>
-                                        <div class="chapter-info">
-                                            <h4>Chapter 5: Integrals & Derivatives</h4>
-                                            <p>Numerical calculus methods</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="progress-placeholder">
-                                        <p>🎯 5 of 13 chapters</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Quick Links -->
-                    <div class="notes-column">
-                        <div class="card notes-card">
-                            <div class="card-header">
-                                <h3>🔗 Quick Links</h3>
-                                <p class="card-subtitle">Helpful resources</p>
-                            </div>
-                            <div class="card-body">
-                                <div class="links-list">
-                                    <a href="#" class="link-item">
-                                        <span class="link-icon">📘</span>
-                                        <div class="link-info">
-                                            <h4>Newman Textbook PDF</h4>
-                                            <p>Course materials</p>
-                                        </div>
-                                    </a>
-
-                                    <a href="https://jax.readthedocs.io" class="link-item" target="_blank">
-                                        <span class="link-icon">🚀</span>
-                                        <div class="link-info">
-                                            <h4>JAX Documentation</h4>
-                                            <p>GPU computing with JAX</p>
-                                        </div>
-                                    </a>
-
-                                    <a href="https://numpy.org/doc/" class="link-item" target="_blank">
-                                        <span class="link-icon">🔢</span>
-                                        <div class="link-info">
-                                            <h4>NumPy Reference</h4>
-                                            <p>Array computing</p>
-                                        </div>
-                                    </a>
-
-                                    <a href="https://docs.python.org/3/" class="link-item" target="_blank">
-                                        <span class="link-icon">🐍</span>
-                                        <div class="link-info">
-                                            <h4>Python Documentation</h4>
-                                            <p>Official Python docs</p>
-                                        </div>
-                                    </a>
-
-                                    <a href="https://github.com" class="link-item" target="_blank">
-                                        <span class="link-icon">💻</span>
-                                        <div class="link-info">
-                                            <h4>GitHub Repository</h4>
-                                            <p>Project source code</p>
-                                        </div>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Resources Section -->
-            <section id="resources" class="section">
-                <h2 class="section-title">Learning Resources</h2>
-
-                <div class="resources-grid">
-                    <div class="card resource-card">
-                        <h3>🎓 Recommended Reading</h3>
-                        <ul class="resource-list">
-                            <li>Newman - <em>Computational Physics</em> (Primary textbook)</li>
-                            <li>Press et al. - <em>Numerical Recipes</em></li>
-                            <li>Landau & Páez - <em>Computational Physics: Problem Solving with Python</em></li>
-                            <li>Giordano & Nakanishi - <em>Computational Physics</em></li>
-                        </ul>
-                    </div>
-
-                    <div class="card resource-card">
-                        <h3>🌐 Online Courses</h3>
-                        <ul class="resource-list">
-                            <li><a href="https://www.coursera.org/specializations/python" target="_blank">Python for Everybody (Coursera)</a></li>
-                            <li><a href="https://ocw.mit.edu/courses/8-371-computational-physics-fall-2022/" target="_blank">MIT OCW: Computational Physics</a></li>
-                            <li><a href="https://www.youtube.com/@3blue1brown" target="_blank">3Blue1Brown (Math/Physics Intuition)</a></li>
-                        </ul>
-                    </div>
-
-                    <div class="card resource-card">
-                        <h3>🔧 Development Tools</h3>
-                        <ul class="resource-list">
-                            <li>Python 3.12+ with NumPy, SciPy, Matplotlib</li>
-                            <li>JAX for GPU acceleration</li>
-                            <li>Jupyter Notebooks for exploration</li>
-                            <li>Git & GitHub for version control</li>
-                            <li>VSCode or PyCharm for development</li>
-                        </ul>
-                    </div>
-
-                    <div class="card resource-card">
-                        <h3>📊 Visualization Tools</h3>
-                        <ul class="resource-list">
-                            <li>Matplotlib - 2D plotting</li>
-                            <li>Three.js - 3D web visualization</li>
-                            <li>Plotly - Interactive plots</li>
-                            <li>Mayavi - 3D scientific visualization</li>
-                        </ul>
-                    </div>
-                </div>
-            </section>
-
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <p>&copy; 2026 Adam Field | Worcester Polytechnic Institute</p>
-                <div class="footer-socials">
-                    <span class="contact-label">Contact me:</span>
-                    <div class="social-icons">
-                        <a href="mailto:adfield@wpi.edu" title="Email">
-                            <img src="assets/email_logo.svg" alt="email logo" onerror="this.style.display='none'">
-                        </a>
-                        <a href="https://www.linkedin.com/in/adfield/" target="_blank" title="LinkedIn">
-                            <img src="assets/linkedin_logo.png" alt="linkedin logo" onerror="this.style.display='none'">
-                        </a>
-                        <a href="https://github.com/AdamField118" target="_blank" title="GitHub">
-                            <img src="assets/github_logo.svg" alt="github logo" onerror="this.style.display='none'">
-                        </a>
-                    </div>
+    <footer>
+        <div class="footer-content">
+            <p>Created by Adam Field</p>
+            <div class="footer-socials">
+                <span class="contact-label">Contact me:</span>
+                <div class="social-icons">
+                    <a href="mailto:adfield@wpi.edu" title="Email">
+                        <img src="./assets/email_logo.svg" alt="email logo">
+                    </a>
+                    <a href="https://www.linkedin.com/in/adfield/" target="_blank" title="LinkedIn">
+                        <img src="./assets/linkedin_logo.png" alt="linkedin logo">
+                    </a>
+                    <a href="https://github.com/AdamField118" target="_blank" title="GitHub">
+                        <img src="./assets/github_logo.svg" alt="github logo">
+                    </a>
                 </div>
             </div>
         </div>
     </footer>
 
-    <script src="script.js"></script>
+    <script src="./filter.js"></script>
+    <script src="./script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
 </body>
 </html>
