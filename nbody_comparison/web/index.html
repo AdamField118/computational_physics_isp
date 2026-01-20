@@ -15,7 +15,7 @@
     <header class="header">
         <div class="container">
             <h1 class="title">N-Body Gravitational Simulation</h1>
-            <p class="subtitle">Multi-Language Performance Comparison: JAX (GPU) · Fortran · C · C++ · Python</p>
+            <p class="subtitle">Multi-Language Performance Comparison: JAX (GPU) · Fortran · C · C++ · Rust · Julia · Python</p>
             <p class="author">Adam Field | Computational Physics ISP | Worcester Polytechnic Institute</p>
         </div>
     </header>
@@ -45,7 +45,7 @@
                             <h3>🎯 Objective</h3>
                         </div>
                         <div class="card-body">
-                            <p>Implement the same gravitational N-body simulation in <strong>five different languages</strong> and compare their performance characteristics on CPU and GPU architectures.</p>
+                            <p>Implement the same gravitational N-body simulation in <strong>seven different languages</strong> and compare their performance characteristics on CPU and GPU architectures.</p>
                         </div>
                     </div>
 
@@ -66,6 +66,8 @@
                             <ul class="implementation-list">
                                 <li><span class="badge badge-jax">JAX (GPU)</span> GPU-accelerated with JIT compilation</li>
                                 <li><span class="badge badge-fortran">Fortran</span> OpenMP parallelized on CPU</li>
+                                <li><span class="badge badge-rust">Rust</span> Modern systems language with zero-cost abstractions</li>
+                                <li><span class="badge badge-julia">Julia</span> High-performance dynamic language for scientific computing</li>
                                 <li><span class="badge badge-cpp">C++</span> Modern C++ with pybind11</li>
                                 <li><span class="badge badge-c">C</span> Pure C with ctypes wrapper</li>
                                 <li><span class="badge badge-python">Python</span> NumPy baseline</li>
@@ -249,6 +251,8 @@
                             <ul>
                                 <li><strong>JAX:</strong> GPU acceleration with JIT compilation</li>
                                 <li><strong>Fortran:</strong> f2py wrapper with OpenMP</li>
+                                <li><strong>Rust:</strong> PyO3 bindings for Python integration</li>
+                                <li><strong>Julia:</strong> PyCall for Python interoperability</li>
                                 <li><strong>C++:</strong> pybind11 for Python bindings</li>
                                 <li><strong>C:</strong> ctypes wrapper</li>
                                 <li><strong>Python:</strong> NumPy, Matplotlib, SciPy</li>
@@ -265,7 +269,7 @@
                             <ul>
                                 <li>Numerical integration methods (Velocity Verlet)</li>
                                 <li>GPU programming and parallelization</li>
-                                <li>Language interoperability (Python ↔ C/C++/Fortran)</li>
+                                <li>Language interoperability (Python ↔ C/C++/Fortran/Rust/Julia)</li>
                                 <li>Performance benchmarking and profiling</li>
                                 <li>Scientific visualization</li>
                                 <li>Computational complexity analysis</li>

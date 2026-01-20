@@ -23,6 +23,8 @@ const colors = {
     fortran: '#ff00ff',
     cpp: '#ff8800',
     c: '#00ffff',
+    rust: '#ff6b35',
+    julia: '#9558b2',
     python: '#ff0000'
 };
 
@@ -35,7 +37,7 @@ const colors = {
  */
 async function loadBenchmarkData() {
     try {
-        const response = await fetch('data/benchmark_results.json');
+        const response = await fetch('/data/benchmark_results.json');
         if (!response.ok) {
             console.warn('Benchmark data not found, using sample data');
             return generateSampleData();
@@ -44,7 +46,7 @@ async function loadBenchmarkData() {
         return data;
     } catch (error) {
         console.warn('Error loading benchmark data:', error);
-        return generateSampleData();
+        //return generateSampleData();
     }
 }
 
@@ -56,7 +58,7 @@ function generateSampleData() {
         timestamp: new Date().toISOString(),
         results: [
             { implementation: 'JAX (GPU)', n_particles: 10, n_steps: 1000, runtime: 0.084, time_per_step: 0.000084, energy_drift: 0.00175 },
-            { implementation: 'JAX (GPU)', n_particles: 50, n_particles: 50, n_steps: 1000, runtime: 0.096, time_per_step: 0.000096, energy_drift: 0.027 },
+            { implementation: 'JAX (GPU)', n_particles: 50, n_steps: 1000, runtime: 0.096, time_per_step: 0.000096, energy_drift: 0.027 },
             { implementation: 'JAX (GPU)', n_particles: 100, n_steps: 1000, runtime: 0.125, time_per_step: 0.000125, energy_drift: 0.046 },
             { implementation: 'JAX (GPU)', n_particles: 500, n_steps: 1000, runtime: 0.088, time_per_step: 0.000088, energy_drift: 0.139 },
             { implementation: 'JAX (GPU)', n_particles: 1000, n_steps: 1000, runtime: 0.080, time_per_step: 0.000080, energy_drift: 3.316 },
@@ -66,6 +68,18 @@ function generateSampleData() {
             { implementation: 'Fortran (OpenMP)', n_particles: 100, n_steps: 1000, runtime: 0.034, time_per_step: 0.000034, energy_drift: 0.022 },
             { implementation: 'Fortran (OpenMP)', n_particles: 500, n_steps: 1000, runtime: 0.394, time_per_step: 0.000394, energy_drift: 0.935 },
             { implementation: 'Fortran (OpenMP)', n_particles: 1000, n_steps: 1000, runtime: 1.373, time_per_step: 0.001373, energy_drift: 3.940 },
+            
+            { implementation: 'Rust', n_particles: 10, n_steps: 1000, runtime: 0.012, time_per_step: 0.000012, energy_drift: 0.000023 },
+            { implementation: 'Rust', n_particles: 50, n_steps: 1000, runtime: 0.018, time_per_step: 0.000018, energy_drift: 0.0093 },
+            { implementation: 'Rust', n_particles: 100, n_steps: 1000, runtime: 0.030, time_per_step: 0.000030, energy_drift: 0.022 },
+            { implementation: 'Rust', n_particles: 500, n_steps: 1000, runtime: 0.350, time_per_step: 0.000350, energy_drift: 0.935 },
+            { implementation: 'Rust', n_particles: 1000, n_steps: 1000, runtime: 1.250, time_per_step: 0.001250, energy_drift: 3.940 },
+            
+            { implementation: 'Julia', n_particles: 10, n_steps: 1000, runtime: 0.013, time_per_step: 0.000013, energy_drift: 0.000023 },
+            { implementation: 'Julia', n_particles: 50, n_steps: 1000, runtime: 0.019, time_per_step: 0.000019, energy_drift: 0.0093 },
+            { implementation: 'Julia', n_particles: 100, n_steps: 1000, runtime: 0.032, time_per_step: 0.000032, energy_drift: 0.022 },
+            { implementation: 'Julia', n_particles: 500, n_steps: 1000, runtime: 0.370, time_per_step: 0.000370, energy_drift: 0.935 },
+            { implementation: 'Julia', n_particles: 1000, n_steps: 1000, runtime: 1.300, time_per_step: 0.001300, energy_drift: 3.940 },
             
             { implementation: 'Python (NumPy)', n_particles: 10, n_steps: 1000, runtime: 0.035, time_per_step: 0.000035, energy_drift: 0.000023 },
             { implementation: 'Python (NumPy)', n_particles: 50, n_steps: 1000, runtime: 0.225, time_per_step: 0.000225, energy_drift: 0.0093 },
@@ -141,7 +155,7 @@ function populatePerformanceTable(implementations) {
     tbody.innerHTML = '';
     
     const nValues = [10, 50, 100, 500, 1000];
-    const implOrder = ['JAX (GPU)', 'Fortran (OpenMP)', 'C++', 'C', 'Python (NumPy)'];
+    const implOrder = ['JAX (GPU)', 'Fortran (OpenMP)', 'Rust', 'Julia', 'C++', 'C', 'Python (NumPy)'];
     
     implOrder.forEach(implName => {
         if (!implementations[implName]) return;
@@ -184,10 +198,12 @@ function createScalingChart(implementations) {
     const ctx = document.getElementById('scalingChart').getContext('2d');
     
     const datasets = [];
-    const implOrder = ['JAX (GPU)', 'Fortran (OpenMP)', 'C++', 'C', 'Python (NumPy)'];
+    const implOrder = ['JAX (GPU)', 'Fortran (OpenMP)', 'Rust', 'Julia', 'C++', 'C', 'Python (NumPy)'];
     const colorMap = {
         'JAX (GPU)': colors.jax,
         'Fortran (OpenMP)': colors.fortran,
+        'Rust': colors.rust,
+        'Julia': colors.julia,
         'C++': colors.cpp,
         'C': colors.c,
         'Python (NumPy)': colors.python
@@ -276,10 +292,12 @@ function createSpeedupChart(implementations) {
     });
     
     const datasets = [];
-    const implOrder = ['JAX (GPU)', 'Fortran (OpenMP)', 'C++', 'C'];
+    const implOrder = ['JAX (GPU)', 'Fortran (OpenMP)', 'Rust', 'Julia', 'C++', 'C'];
     const colorMap = {
         'JAX (GPU)': colors.jax,
         'Fortran (OpenMP)': colors.fortran,
+        'Rust': colors.rust,
+        'Julia': colors.julia,
         'C++': colors.cpp,
         'C': colors.c
     };
@@ -360,10 +378,12 @@ function createEnergyChart(implementations) {
     const ctx = document.getElementById('energyChart').getContext('2d');
     
     const datasets = [];
-    const implOrder = ['JAX (GPU)', 'Fortran (OpenMP)', 'C++', 'C', 'Python (NumPy)'];
+    const implOrder = ['JAX (GPU)', 'Fortran (OpenMP)', 'Rust', 'Julia', 'C++', 'C', 'Python (NumPy)'];
     const colorMap = {
         'JAX (GPU)': colors.jax,
         'Fortran (OpenMP)': colors.fortran,
+        'Rust': colors.rust,
+        'Julia': colors.julia,
         'C++': colors.cpp,
         'C': colors.c,
         'Python (NumPy)': colors.python
