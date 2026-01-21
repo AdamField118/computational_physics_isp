@@ -222,7 +222,8 @@ function renderMarkdown(content) {
 }
 
 const markdownFiles = [
-    "./nbody_comparison/web/index.md"
+    "./nbody_comparison/web/index.md",
+    "./textbook_notes/chapter_0/notes-1.md"
 ];
 
 function parseFrontMatter(content) {
