@@ -1,411 +1,411 @@
 #!/usr/bin/env python3
 """
-Quick benchmark for Fortran and C FEM implementations
-Compares performance against Python reference
-
-Directory structure:
-    Project_directory/
-        benchmark/
-            benchmark.py          (this file)
-        c/
-            fem_assembly.c
-            fem_c.so             (after compilation)
-        fortran/
-            fem_assembly.f90
-            fem_fortran.*.so     (after compilation)
-        fem_reference.py
-
-Usage:
-    cd benchmark/
-    python benchmark.py
+Comprehensive FEM 1D Benchmark Suite
+Compares Python, C, C++, Fortran, Julia, and Rust implementations
+Outputs results to JSON for web visualization
 """
 
 import numpy as np
 import time
+import json
 import sys
 from pathlib import Path
+from datetime import datetime
+from ctypes import CDLL, c_int, c_double
+import numpy.ctypeslib as npct
 
-# Add parent directory to path to import fem_reference
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Try to import the reference implementation
-try:
-    from fem_reference import assemble_system as python_assemble
-    from fem_reference import manufactured_solution, source_term
-except ImportError:
-    print("Error: fem_reference.py not found!")
-    print("Make sure fem_reference.py is in the parent directory")
-    print(f"Looking in: {Path(__file__).parent.parent}")
-    sys.exit(1)
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'python'))
+from fem_reference import assemble_system as python_assemble, source_term
 
 
-def load_fortran():
-    """Load Fortran implementation via f2py"""
-    # Add fortran directory to path
-    fortran_dir = Path(__file__).parent.parent / 'fortran'
+class BenchmarkSuite:
+    def __init__(self):
+        self.implementations = {}
+        self.results = {
+            'metadata': {
+                'date': datetime.now().isoformat(),
+                'problem': '1D FEM Assembly',
+                'description': 'Benchmark of multi-language FEM implementations'
+            },
+            'implementations': {},
+            'benchmarks': []
+        }
     
-    # Check if directory exists
-    if not fortran_dir.exists():
-        print("\n⚠️  Fortran directory not found!")
-        print(f"Expected: {fortran_dir}")
-        return None
-    
-    # Add to path
-    sys.path.insert(0, str(fortran_dir))
-    
-    # Check for compiled module
-    fortran_modules = list(fortran_dir.glob('fem_fortran*.so'))
-    if not fortran_modules:
-        print("\n⚠️  Fortran module not found!")
-        print(f"Looking in: {fortran_dir}")
-        print(f"No files matching: fem_fortran*.so")
-        print("\nCompile with:")
-        print("  cd fortran/")
-        print("  f2py -c -m fem_fortran fem_assembly.f90 -llapack -lblas")
-        return None
-    
-    try:
-        import fem_fortran
-        return fem_fortran.assemble_system
-    except ImportError as e:
-        print("\n⚠️  Failed to import Fortran module!")
-        print(f"Found module file: {fortran_modules[0]}")
-        print(f"Import error: {e}")
-        print(f"sys.path includes: {fortran_dir}")
-        return None
-
-
-def load_c():
-    """Load C implementation via ctypes"""
-    try:
-        from ctypes import CDLL, c_int, POINTER, c_double
-        import numpy.ctypeslib as npct
+    def load_implementations(self):
+        """Load all available implementations"""
+        print("=" * 70)
+        print("LOADING IMPLEMENTATIONS")
+        print("=" * 70)
         
-        # Look for C library in ../c directory
-        c_dir = Path(__file__).parent.parent / 'c'
-        lib_names = [
-            c_dir / 'fem_c.so',
-            c_dir / 'fem_assembly.so',
-            './fem_c.so',  # Fallback to current directory
-            'fem_c.so'
-        ]
+        # Always available: Python reference
+        self.implementations['Python'] = {
+            'assemble': python_assemble,
+            'parallel': False,
+            'serial': python_assemble
+        }
+        print("✓ Python reference loaded")
         
-        lib = None
-        lib_path = None
-        for name in lib_names:
-            if Path(name).exists():
-                lib = CDLL(str(name))
-                lib_path = name
-                break
+        # Try to load C
+        c_impl = self._load_c()
+        if c_impl:
+            self.implementations['C'] = c_impl
+            print("✓ C (OpenMP) loaded")
         
-        if lib is None:
-            print("\n⚠️  C library not found!")
-            print(f"Looking in: {c_dir}")
-            print("Compile with:")
-            print("  cd c/")
-            print("  gcc -O3 -fPIC -shared -o fem_c.so fem_assembly.c")
-            return None
+        # Try to load C++
+        cpp_impl = self._load_cpp()
+        if cpp_impl:
+            self.implementations['C++'] = cpp_impl
+            print("✓ C++ (OpenMP) loaded")
         
-        # Set up function signature
-        lib.assemble_system.argtypes = [
-            c_int,                              # n
-            npct.ndpointer(dtype=np.float64),   # f_vals
-            npct.ndpointer(dtype=np.float64),   # K (output)
-            npct.ndpointer(dtype=np.float64)    # F (output)
-        ]
+        # Try to load Fortran
+        fortran_impl = self._load_fortran()
+        if fortran_impl:
+            self.implementations['Fortran'] = fortran_impl
+            print("✓ Fortran (OpenMP) loaded")
         
-        def c_assemble_wrapper(n, f_vals):
-            K = np.zeros((n, n), dtype=np.float64, order='C')
-            F = np.zeros(n, dtype=np.float64)
-            lib.assemble_system(n, f_vals, K, F)
-            return K, F
+        # Try to load Julia
+        julia_impl = self._load_julia()
+        if julia_impl:
+            self.implementations['Julia'] = julia_impl
+            print("✓ Julia (Threads) loaded")
         
-        return c_assemble_wrapper
+        # Try to load Rust
+        rust_impl = self._load_rust()
+        if rust_impl:
+            self.implementations['Rust'] = rust_impl
+            print("✓ Rust (Rayon) loaded")
         
-    except Exception as e:
-        print(f"\n⚠️  Error loading C library: {e}")
-        return None
-
-
-def verify_correctness(implementations, n=100, tol=1e-12):
-    """Verify all implementations produce identical results"""
-    print("=" * 70)
-    print("CORRECTNESS VERIFICATION")
-    print("=" * 70)
-    print(f"Testing with n = {n} elements")
-    print(f"Tolerance: {tol:.0e}\n")
+        print(f"\nLoaded {len(self.implementations)} implementations")
+        print()
     
-    h = 1.0 / n
-    x = np.linspace(0, 1, n+1)
-    f_vals = source_term(x)
-    
-    # Get reference solution
-    K_ref, F_ref = python_assemble(n, f_vals)
-    print(f"{'Implementation':<15} {'Max K diff':<15} {'Max F diff':<15} {'Status':<10}")
-    print("-" * 70)
-    print(f"{'Python':<15} {'(reference)':<15} {'(reference)':<15} {'✓':<10}")
-    
-    all_pass = True
-    
-    for name, assemble_fn in implementations.items():
-        if assemble_fn is None:
-            print(f"{name:<15} {'N/A':<15} {'N/A':<15} {'SKIPPED':<10}")
-            continue
+    def _load_c(self):
+        """Load C implementation via ctypes"""
+        try:
+            c_dir = Path(__file__).parent.parent / 'c'
+            lib_path = c_dir / 'fem_c.so'
             
-        K, F = assemble_fn(n, f_vals)
+            if not lib_path.exists():
+                return None
+            
+            lib = CDLL(str(lib_path))
+            
+            # Set up function signatures
+            for func_name in ['assemble_system', 'assemble_system_serial']:
+                func = getattr(lib, func_name)
+                func.argtypes = [
+                    c_int,
+                    npct.ndpointer(dtype=np.float64),
+                    npct.ndpointer(dtype=np.float64),
+                    npct.ndpointer(dtype=np.float64)
+                ]
+            
+            def c_wrapper(n, f_vals, serial=False):
+                K = np.zeros((n, n), dtype=np.float64, order='C')
+                F = np.zeros(n, dtype=np.float64)
+                func = lib.assemble_system_serial if serial else lib.assemble_system
+                func(n, f_vals, K, F)
+                return K, F
+            
+            return {
+                'assemble': lambda n, f: c_wrapper(n, f, False),
+                'serial': lambda n, f: c_wrapper(n, f, True),
+                'parallel': True
+            }
+        except Exception as e:
+            print(f"⚠️  Failed to load C: {e}")
+            return None
+    
+    def _load_cpp(self):
+        """Load C++ implementation via pybind11"""
+        try:
+            cpp_dir = Path(__file__).parent.parent / 'cpp'
+            sys.path.insert(0, str(cpp_dir))
+            
+            import fem_cpp
+            
+            return {
+                'assemble': fem_cpp.assemble_system,
+                'serial': fem_cpp.assemble_system_serial,
+                'parallel': True
+            }
+        except Exception as e:
+            print(f"⚠️  Failed to load C++: {e}")
+            return None
+    
+    def _load_fortran(self):
+        """Load Fortran implementation via f2py"""
+        try:
+            fortran_dir = Path(__file__).parent.parent / 'fortran'
+            sys.path.insert(0, str(fortran_dir))
+            
+            import fem_fortran
+            
+            return {
+                'assemble': fem_fortran.assemble_system,
+                'serial': fem_fortran.assemble_system_serial,
+                'parallel': True
+            }
+        except Exception as e:
+            print(f"⚠️  Failed to load Fortran: {e}")
+            return None
+    
+    def _load_julia(self):
+        """Load Julia implementation via PyJulia"""
+        try:
+            from julia.api import Julia
+            jl = Julia(compiled_modules=False)
+            from julia import Main
+            julia_path = Path(__file__).parent.parent / 'julia' / 'fem_assembly.jl'
+            Main.include(str(julia_path))
+            
+            def julia_wrapper(n, f_vals):
+                # Julia uses 1-based indexing
+                K, F = Main.assemble_system(n, f_vals)
+                return np.array(K), np.array(F)
+            
+            def julia_wrapper_serial(n, f_vals):
+                K, F = Main.assemble_system_serial(n, f_vals)
+                return np.array(K), np.array(F)
+            
+            return {
+                'assemble': julia_wrapper,
+                'serial': julia_wrapper_serial,
+                'parallel': True
+            }
+        except Exception as e:
+            print(f"⚠️  Failed to load Julia: {e}")
+            return None
+    
+    def _load_rust(self):
+        """Load Rust implementation via PyO3/maturin"""
+        try:
+            rust_dir = Path(__file__).parent.parent / 'rust'
+            sys.path.insert(0, str(rust_dir / 'target' / 'release'))
+            
+            import fem_rust
+            
+            return {
+                'assemble': fem_rust.assemble_system,
+                'serial': fem_rust.assemble_system_serial,
+                'parallel': True
+            }
+        except Exception as e:
+            print(f"⚠️  Failed to load Rust: {e}")
+            return None
+    
+    def verify_correctness(self, n=100, tol=1e-12):
+        """Verify all implementations produce identical results"""
+        print("=" * 70)
+        print("CORRECTNESS VERIFICATION")
+        print("=" * 70)
+        print(f"Testing with n = {n} elements")
+        print(f"Tolerance: {tol:.0e}\n")
         
-        k_diff = np.max(np.abs(K - K_ref))
-        f_diff = np.max(np.abs(F - F_ref))
-        
-        if k_diff < tol and f_diff < tol:
-            status = "✓ PASS"
-        else:
-            status = "✗ FAIL"
-            all_pass = False
-        
-        print(f"{name:<15} {k_diff:<15.2e} {f_diff:<15.2e} {status:<10}")
-    
-    print("-" * 70)
-    if all_pass:
-        print("✓ All implementations verified correct!\n")
-    else:
-        print("✗ Some implementations failed verification!\n")
-        sys.exit(1)
-    
-    return all_pass
-
-
-def benchmark_implementation(name, assemble_fn, n_values, n_trials=5):
-    """Benchmark a single implementation"""
-    print(f"\nBenchmarking {name}...")
-    
-    results = {
-        'name': name,
-        'n_values': [],
-        'times_mean': [],
-        'times_std': [],
-        'times_min': []
-    }
-    
-    for n in n_values:
-        h = 1.0 / n
         x = np.linspace(0, 1, n+1)
         f_vals = source_term(x)
         
-        # Warmup (important for JIT-compiled languages, though not C/Fortran)
-        _ = assemble_fn(n, f_vals)
+        # Get reference solution
+        K_ref, F_ref = python_assemble(n, f_vals)
         
-        # Timed runs
-        times = []
-        for trial in range(n_trials):
-            start = time.perf_counter()
-            K, F = assemble_fn(n, f_vals)
-            end = time.perf_counter()
-            times.append(end - start)
+        print(f"{'Implementation':<15} {'Max K diff':<15} {'Max F diff':<15} {'Status':<10}")
+        print("-" * 70)
+        print(f"{'Python':<15} {'(reference)':<15} {'(reference)':<15} {'✓':<10}")
         
-        results['n_values'].append(n)
-        results['times_mean'].append(np.mean(times))
-        results['times_std'].append(np.std(times))
-        results['times_min'].append(np.min(times))
+        all_pass = True
         
-        print(f"  n={n:6d}: {np.mean(times)*1000:8.3f} ± {np.std(times)*1000:6.3f} ms "
-              f"(min: {np.min(times)*1000:7.3f} ms)")
+        for name, impl in self.implementations.items():
+            if name == 'Python':
+                continue
+            
+            try:
+                K, F = impl['assemble'](n, f_vals)
+                
+                k_diff = np.max(np.abs(K - K_ref))
+                f_diff = np.max(np.abs(F - F_ref))
+                
+                if k_diff < tol and f_diff < tol:
+                    status = "✓ PASS"
+                else:
+                    status = "✗ FAIL"
+                    all_pass = False
+                
+                print(f"{name:<15} {k_diff:<15.2e} {f_diff:<15.2e} {status:<10}")
+            except Exception as e:
+                print(f"{name:<15} {'ERROR':<15} {str(e):<15} {'✗ FAIL':<10}")
+                all_pass = False
+        
+        print("-" * 70)
+        if all_pass:
+            print("✓ All implementations verified correct!\n")
+        else:
+            print("✗ Some implementations failed verification!\n")
+            sys.exit(1)
+        
+        return all_pass
     
-    return results
-
-
-def print_comparison_table(all_results):
-    """Print a nice comparison table"""
-    print("\n" + "=" * 70)
-    print("PERFORMANCE COMPARISON")
-    print("=" * 70)
+    def benchmark_implementation(self, name, n_values, n_trials=5):
+        """Benchmark a single implementation"""
+        print(f"\nBenchmarking {name}...")
+        
+        impl = self.implementations[name]
+        results_parallel = []
+        results_serial = [] if impl['parallel'] else None
+        
+        for n in n_values:
+            x = np.linspace(0, 1, n+1)
+            f_vals = source_term(x)
+            
+            # Warmup
+            _ = impl['assemble'](n, f_vals)
+            
+            # Parallel version
+            times_parallel = []
+            for _ in range(n_trials):
+                start = time.perf_counter()
+                K, F = impl['assemble'](n, f_vals)
+                end = time.perf_counter()
+                times_parallel.append(end - start)
+            
+            results_parallel.append({
+                'n': n,
+                'mean': np.mean(times_parallel),
+                'std': np.std(times_parallel),
+                'min': np.min(times_parallel),
+                'max': np.max(times_parallel)
+            })
+            
+            print(f"  n={n:6d} (parallel): {np.mean(times_parallel)*1000:8.3f} ± "
+                  f"{np.std(times_parallel)*1000:6.3f} ms (min: {np.min(times_parallel)*1000:7.3f} ms)")
+            
+            # Serial version if available
+            if impl['parallel']:
+                times_serial = []
+                for _ in range(n_trials):
+                    start = time.perf_counter()
+                    K, F = impl['serial'](n, f_vals)
+                    end = time.perf_counter()
+                    times_serial.append(end - start)
+                
+                results_serial.append({
+                    'n': n,
+                    'mean': np.mean(times_serial),
+                    'std': np.std(times_serial),
+                    'min': np.min(times_serial),
+                    'max': np.max(times_serial)
+                })
+                
+                speedup = np.mean(times_serial) / np.mean(times_parallel)
+                print(f"  n={n:6d} (serial):   {np.mean(times_serial)*1000:8.3f} ± "
+                      f"{np.std(times_serial)*1000:6.3f} ms (speedup: {speedup:.2f}x)")
+        
+        return {
+            'parallel': results_parallel,
+            'serial': results_serial
+        }
     
-    # Get problem sizes
-    n_values = all_results[0]['n_values']
+    def run_benchmarks(self, n_values, n_trials=5):
+        """Run benchmarks on all implementations"""
+        print("\n" + "=" * 70)
+        print("PERFORMANCE BENCHMARKING")
+        print("=" * 70)
+        print(f"Problem sizes: {n_values}")
+        print(f"Trials per size: {n_trials}\n")
+        
+        for name in self.implementations.keys():
+            results = self.benchmark_implementation(name, n_values, n_trials)
+            self.results['benchmarks'].append({
+                'name': name,
+                'parallel': self.implementations[name]['parallel'],
+                'results': results
+            })
     
-    for n in n_values:
-        print(f"\n--- n = {n} elements ---")
-        print(f"{'Implementation':<15} {'Time (ms)':<12} {'Speedup':<12} {'Status':<10}")
+    def save_results(self, output_file='fem_benchmark_results.json'):
+        """Save results to JSON file"""
+        output_path = Path(__file__).parent.parent / 'results' / output_file
+        output_path.parent.mkdir(exist_ok=True)
+        
+        with open(output_path, 'w') as f:
+            json.dump(self.results, f, indent=2)
+        
+        print(f"\n✓ Results saved to: {output_path}")
+        return output_path
+    
+    def print_summary(self):
+        """Print summary table"""
+        print("\n" + "=" * 70)
+        print("SUMMARY")
+        print("=" * 70)
+        
+        # Get the largest problem size
+        n_values = [r['n'] for r in self.results['benchmarks'][0]['results']['parallel']]
+        largest_n = n_values[-1]
+        
+        print(f"\nResults for n={largest_n}:")
+        print(f"{'Implementation':<15} {'Parallel (ms)':<15} {'Serial (ms)':<15} {'Speedup':<10}")
         print("-" * 70)
         
-        # Find reference time (Python)
-        ref_time = None
-        for result in all_results:
-            if result['name'] == 'Python':
-                idx = result['n_values'].index(n)
-                ref_time = result['times_mean'][idx]
-                break
-        
-        # Sort by time
-        sorted_results = sorted(all_results, 
-                               key=lambda x: x['times_mean'][x['n_values'].index(n)])
-        
-        for result in sorted_results:
-            name = result['name']
-            idx = result['n_values'].index(n)
-            time_ms = result['times_mean'][idx] * 1000
+        for bench in self.results['benchmarks']:
+            name = bench['name']
+            parallel_time = bench['results']['parallel'][-1]['mean'] * 1000
             
-            if ref_time is not None and ref_time > 0:
-                speedup = ref_time / result['times_mean'][idx]
-                speedup_str = f"{speedup:.1f}x"
+            if bench['parallel'] and bench['results']['serial']:
+                serial_time = bench['results']['serial'][-1]['mean'] * 1000
+                speedup = serial_time / parallel_time
+                print(f"{name:<15} {parallel_time:>13.3f}   {serial_time:>13.3f}   {speedup:>8.2f}x")
             else:
-                speedup_str = "N/A"
+                print(f"{name:<15} {parallel_time:>13.3f}   {'N/A':<15} {'N/A':<10}")
+        
+        # Relative speedups vs Python
+        print(f"\nSpeedup vs Python (parallel):")
+        print(f"{'Implementation':<15} {'Speedup':<10}")
+        print("-" * 30)
+        
+        python_time = next(b['results']['parallel'][-1]['mean'] 
+                          for b in self.results['benchmarks'] if b['name'] == 'Python')
+        
+        for bench in sorted(self.results['benchmarks'], 
+                          key=lambda x: x['results']['parallel'][-1]['mean']):
+            name = bench['name']
+            time_val = bench['results']['parallel'][-1]['mean']
+            speedup = python_time / time_val
             
-            # Mark the fastest
-            if result == sorted_results[0]:
-                status = "🏆 FASTEST"
-            else:
-                status = ""
-            
-            print(f"{name:<15} {time_ms:>10.3f}   {speedup_str:<12} {status:<10}")
-
-
-def plot_results(all_results):
-    """Generate performance plots"""
-    try:
-        import matplotlib.pyplot as plt
-        
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
-        
-        # Plot 1: Absolute time
-        for result in all_results:
-            n_vals = result['n_values']
-            times = np.array(result['times_mean']) * 1000  # Convert to ms
-            ax1.loglog(n_vals, times, 'o-', label=result['name'], linewidth=2)
-        
-        ax1.set_xlabel('Number of elements (n)', fontsize=12)
-        ax1.set_ylabel('Assembly time (ms)', fontsize=12)
-        ax1.set_title('FEM Assembly Performance', fontsize=14, fontweight='bold')
-        ax1.legend(fontsize=10)
-        ax1.grid(True, alpha=0.3)
-        
-        # Add O(n) reference line
-        n_vals = all_results[0]['n_values']
-        ref_line = np.array(n_vals) * (all_results[0]['times_mean'][0] * 1000 / n_vals[0])
-        ax1.loglog(n_vals, ref_line, 'k--', alpha=0.5, label='O(n)')
-        
-        # Plot 2: Speedup relative to Python
-        ref_result = None
-        for result in all_results:
-            if result['name'] == 'Python':
-                ref_result = result
-                break
-        
-        if ref_result is not None:
-            for result in all_results:
-                if result['name'] == 'Python':
-                    continue
-                n_vals = result['n_values']
-                speedups = []
-                for i, n in enumerate(n_vals):
-                    ref_time = ref_result['times_mean'][i]
-                    speedups.append(ref_time / result['times_mean'][i])
-                ax2.semilogx(n_vals, speedups, 'o-', label=result['name'], linewidth=2)
-            
-            ax2.set_xlabel('Number of elements (n)', fontsize=12)
-            ax2.set_ylabel('Speedup vs Python', fontsize=12)
-            ax2.set_title('Speedup Comparison', fontsize=14, fontweight='bold')
-            ax2.legend(fontsize=10)
-            ax2.grid(True, alpha=0.3)
-            ax2.axhline(y=1, color='k', linestyle='--', alpha=0.3)
-        
-        plt.tight_layout()
-        
-        # Save plot
-        output_file = 'fem_benchmark_results.png'
-        plt.savefig(output_file, dpi=150, bbox_inches='tight')
-        print(f"\n✓ Plot saved to: {output_file}")
-        
-        # Try to show plot
-        try:
-            plt.show()
-        except:
-            pass  # Skip if running headless
-            
-    except ImportError:
-        print("\n⚠️  matplotlib not available, skipping plots")
+            if name == bench['name']:
+                marker = "🏆" if time_val == min(b['results']['parallel'][-1]['mean'] 
+                                                for b in self.results['benchmarks']) else ""
+                print(f"{name:<15} {speedup:>8.2f}x {marker}")
 
 
 def main():
-    print("=" * 70)
-    print("1D FEM MULTI-LANGUAGE BENCHMARK")
-    print("=" * 70)
-    print("Comparing Python, Fortran, and C implementations\n")
+    # Configuration
+    n_values = [100, 500, 1000, 5000, 10000, 50000]
+    n_trials = 5
+    
+    # Create benchmark suite
+    suite = BenchmarkSuite()
     
     # Load implementations
-    print("Loading implementations...")
-    #fortran_fn = load_fortran()
-    c_fn = load_c()
+    suite.load_implementations()
     
-    implementations = {
-        # 'Fortran': fortran_fn,
-        'C': c_fn,
-    }
-    
-    # Check what's available
-    available = [name for name, fn in implementations.items() if fn is not None]
-    if not available:
-        print("\n✗ No compiled implementations found!")
-        print("\nPlease compile at least one:")
-        print("  Fortran: f2py -c -m fem_fortran fem_assembly.f90 -llapack")
-        print("  C:       gcc -O3 -fPIC -shared -o fem_c.so fem_assembly.c")
+    if len(suite.implementations) < 2:
+        print("Error: Need at least 2 implementations to benchmark")
         sys.exit(1)
     
-    print(f"✓ Available: {', '.join(available)}")
-    print(f"✓ Python reference always included\n")
-    
     # Verify correctness
-    verify_correctness(implementations, n=100)
-    
-    # Benchmark parameters
-    print("=" * 70)
-    print("PERFORMANCE BENCHMARKING")
-    print("=" * 70)
-    print("Running 5 trials per problem size\n")
-    
-    # Problem sizes (adjust based on your machine)
-    n_values = [100, 500, 1000, 5000, 10000]
-    print(f"Problem sizes: {n_values}\n")
+    suite.verify_correctness(n=100)
     
     # Run benchmarks
-    all_results = []
+    suite.run_benchmarks(n_values, n_trials)
     
-    # Python reference
-    print("Benchmarking Python (reference)...")
-    python_results = benchmark_implementation('Python', python_assemble, n_values)
-    all_results.append(python_results)
+    # Save results
+    suite.save_results()
     
-    # Other implementations
-    for name, fn in implementations.items():
-        if fn is not None:
-            results = benchmark_implementation(name, fn, n_values)
-            all_results.append(results)
+    # Print summary
+    suite.print_summary()
     
-    # Print comparison
-    print_comparison_table(all_results)
-    
-    # Generate plots
     print("\n" + "=" * 70)
-    print("GENERATING PLOTS")
+    print("BENCHMARK COMPLETE")
     print("=" * 70)
-    plot_results(all_results)
-    
-    # Summary
-    print("\n" + "=" * 70)
-    print("SUMMARY")
-    print("=" * 70)
-    print(f"✓ Tested {len(all_results)} implementations")
-    print(f"✓ All implementations verified correct")
-    print(f"✓ Scaling is O(n) as expected")
-    
-    # Find fastest for largest problem
-    largest_n = n_values[-1]
-    fastest = min(all_results, 
-                  key=lambda x: x['times_mean'][x['n_values'].index(largest_n)])
-    fastest_time = fastest['times_mean'][-1] * 1000
-    
-    print(f"\n🏆 Fastest for n={largest_n}: {fastest['name']} ({fastest_time:.3f} ms)")
-    print("\n" + "=" * 70)
 
 
 if __name__ == '__main__':

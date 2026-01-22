@@ -1,25 +1,81 @@
-! 1D FEM Assembly in Fortran
-! Compile with: f2py -c -m fem_fortran fem_assembly.f90
+! 1D FEM Assembly in Fortran with OpenMP parallelization
+! Compile with: f2py -c -m fem_fortran fem_assembly.f90 --f90flags="-fopenmp" -lgomp
 
 subroutine assemble_system(n, f_vals, K, F)
+    use omp_lib
     implicit none
 
     integer, intent(in) :: n
-    real(8), intent(in)  :: f_vals(:)       ! expects length n+1
-    real(8), intent(out) :: K(:,:)          ! caller must allocate (n,n)
-    real(8), intent(out) :: F(:)            ! caller must allocate (n,)
+    real(8), intent(in)  :: f_vals(n+1)
+    real(8), intent(out) :: K(n,n)
+    real(8), intent(out) :: F(n)
+!f2py integer intent(in) :: n
+!f2py real(8) dimension(n+1),intent(in) :: f_vals
+!f2py real(8) dimension(n,n),intent(out) :: K
+!f2py real(8) dimension(n),intent(out) :: F
 
-    integer :: e, nodeL, nodeR, iL, iR, i, nv
+    integer :: e, i, nodeL, nodeR, iL, iR
     real(8) :: h, k_local
+    
+    ! Initialize outputs
+    K = 0.0d0
+    F = 0.0d0
 
-    nv = size(f_vals)
-    if (nv /= n + 1) then
-        write(*,*) 'ERROR in assemble_system: size(f_vals)=', nv, ' but expected n+1=', n+1
-        stop 1
-    endif
+    h = 1.0d0 / dble(n)
+    k_local = 1.0d0 / h
 
-    ! Do NOT allocate K/F here. Caller provides memory.
-    ! initialize outputs
+    ! Parallel assembly of stiffness matrix
+    !$OMP PARALLEL DO PRIVATE(e, nodeL, nodeR, iL, iR) REDUCTION(+:K)
+    do e = 1, n
+        nodeL = e
+        nodeR = e + 1
+
+        if (nodeL >= 2) then
+            iL = nodeL - 1
+            iR = nodeR - 1
+            !$OMP ATOMIC
+            K(iL, iL) = K(iL, iL) + k_local
+            !$OMP ATOMIC
+            K(iL, iR) = K(iL, iR) - k_local
+            !$OMP ATOMIC
+            K(iR, iL) = K(iR, iL) - k_local
+        endif
+
+        iR = nodeR - 1
+        !$OMP ATOMIC
+        K(iR, iR) = K(iR, iR) + k_local
+    enddo
+    !$OMP END PARALLEL DO
+
+    ! Parallel assembly of load vector
+    !$OMP PARALLEL DO PRIVATE(i)
+    do i = 1, n-1
+        F(i) = (h / 2.0d0) * (f_vals(i) + f_vals(i+2))
+    enddo
+    !$OMP END PARALLEL DO
+    
+    ! Last node uses only left contribution (Neumann BC on right)
+    F(n) = (h / 2.0d0) * f_vals(n)
+
+end subroutine assemble_system
+
+
+! Serial version for comparison
+subroutine assemble_system_serial(n, f_vals, K, F)
+    implicit none
+
+    integer, intent(in) :: n
+    real(8), intent(in)  :: f_vals(n+1)
+    real(8), intent(out) :: K(n,n)
+    real(8), intent(out) :: F(n)
+!f2py integer intent(in) :: n
+!f2py real(8) dimension(n+1),intent(in) :: f_vals
+!f2py real(8) dimension(n,n),intent(out) :: K
+!f2py real(8) dimension(n),intent(out) :: F
+
+    integer :: e, i, nodeL, nodeR, iL, iR
+    real(8) :: h, k_local
+    
     K = 0.0d0
     F = 0.0d0
 
@@ -43,8 +99,9 @@ subroutine assemble_system(n, f_vals, K, F)
     enddo
 
     do i = 1, n-1
-        F(i) = (h / 2.0d0) * ( f_vals(i) + f_vals(i + 2) )
+        F(i) = (h / 2.0d0) * (f_vals(i) + f_vals(i+2))
     enddo
-    F(n) = (h / 2.0d0) * ( f_vals(n) + f_vals(n + 1) )
+    ! Last node uses only left contribution (Neumann BC on right)
+    F(n) = (h / 2.0d0) * f_vals(n)
 
-end subroutine assemble_system
+end subroutine assemble_system_serial
