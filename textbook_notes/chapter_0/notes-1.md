@@ -87,14 +87,14 @@ Note this is the same matrix as classical mechanics! Both come from the Principl
 - Mechanics Version
 
 The equilibrium configuration minimizes potential energy:
-$$\underset{\text{min}}{\boldsymbol{x}}V(\boldsmbol{x})=\underset{\text{min}}{\boldsymbol{x}}\left[\frac{1}{2}\boldsymbol{x}^TK\boldsymbol{x}-\boldsymbol{F}^T\boldsymbol{x}\right]$$
+$$\underset{\text{min}}{\boldsymbol{x}}V(\boldsymbol{x})=\underset{\text{min}}{\boldsymbol{x}}\left[\frac{1}{2}\boldsymbol{x}^TK\boldsymbol{x}-\boldsymbol{F}^T\boldsymbol{x}\right]$$
 Setting $\frac{\partial V}{\partial x_i}$ gives: $K\boldsymbol{x}=\boldsymbol{F}$.
 
 - FEM Version
 
 The FEM solution minimizes the energy functional:
 $$\underset{\text{min}}{v\in S}E(v)=\underset{\text{min}}{v\in S}\left[\frac{1}{2}a(v,v)-(f,v)\right]$$
-Setting $\frac{\partialE}{\partial U_i}$ gives: $K\boldsymbol{U}=\boldsymbol{F}$.
+Setting $\frac{\partial{E}}{\partial U_i}$ gives: $K\boldsymbol{U}=\boldsymbol{F}$.
 
 Noteably they're the same optimization problem!
 
