@@ -8,14 +8,14 @@ snippet: "Multi-language performance comparison of N-body gravitational simulati
 
 This project implements identical gravitational N-body simulations across **seven programming languages** to explore performance characteristics, numerical accuracy, and language-specific optimizations.
 
-### 🎯 Objectives
+### Objectives
 
 - Implement the same N-body physics in multiple languages
 - Compare raw performance across CPU and GPU architectures  
 - Validate numerical accuracy across all implementations
 - Demonstrate modern scientific computing workflows
 
-### 💻 Implementations
+### Implementations
 
 - **JAX (GPU)** - GPU-accelerated with JIT compilation
 - **Fortran (OpenMP)** - CPU parallel with OpenMP directives
@@ -25,7 +25,7 @@ This project implements identical gravitational N-body simulations across **seve
 - **C** - Pure C with ctypes wrapper
 - **Python (NumPy)** - Baseline pure Python/NumPy
 
-### 📊 Key Results
+### Key Results
 
 At **N=1000 particles**:
 - JAX (GPU) is **1384× faster** than Python
@@ -359,7 +359,7 @@ Test: Same initial conditions (N=100, seed=42)
 | C              | -45.2342     | < 10⁻¹⁰           |
 | Python         | -45.2342     | < 10⁻¹⁰           |
 
-**Verdict:** ✅ All implementations agree to floating-point precision
+**Verdict:** All implementations agree to floating-point precision
 
 ### Numerical Accuracy Test Suite
 
