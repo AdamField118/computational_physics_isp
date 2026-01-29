@@ -82,6 +82,24 @@ The stiffness matrix $K$ is:
 1. **Symmetric**: $K_{ij} = K_{ji}$ (since $a(\cdot, \cdot)$ is symmetric)
 2. **Positive definite**: $V^T K V = a(v,v) \geq 0$ where $v = \sum v_j \phi_j$
 
+Note this is the same matrix as classical mechanics! Both come from the Principle of Minimum Energy:
+
+- Mechanics Version
+
+The equilibrium configuration minimizes potential energy:
+$$\underset{\text{min}}{\boldsymbol{x}}V(\boldsymbol{x})=\underset{\text{min}}{\boldsymbol{x}}\left[\frac{1}{2}\boldsymbol{x}^TK\boldsymbol{x}-\boldsymbol{F}^T\boldsymbol{x}\right]$$
+Setting $\frac{\partial V}{\partial x_i}$ gives: $K\boldsymbol{x}=\boldsymbol{F}$.
+
+- FEM Version
+
+The FEM solution minimizes the energy functional:
+$$\underset{\text{min}}{v\in S}E(v)=\underset{\text{min}}{v\in S}\left[\frac{1}{2}a(v,v)-(f,v)\right]$$
+Setting $\frac{\partial{E}}{\partial U_i}$ gives: $K\boldsymbol{U}=\boldsymbol{F}$.
+
+Noteably they're the same optimization problem!
+
+This shows that the 1D FEM problem $-u''=f$ is literally a continuous version of a mass spring chain!
+
 ## 0.3 Error Estimates
 
 ### Energy Norm
