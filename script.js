@@ -365,7 +365,8 @@ const markdownFiles = [
     "./textbook_notes/chapter_0/notes-1.md",
     "./textbook_notes/chapter_0/exercises-1.md",
     "./fem_1d_benchmark/web/fem_1d_benchmark_project.md",
-    "./textbook_notes/chapter_0/sobolev_fem_foundations.md"
+    "./textbook_notes/chapter_0/sobolev_fem_foundations.md",
+    "./textbook_notes/chapter_3/exercises.md"
 ];
 
 function parseFrontMatter(content) {
