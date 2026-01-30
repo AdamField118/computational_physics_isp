@@ -592,6 +592,35 @@ nav a:hover {
 .language-latex .token.bold { font-weight: bold; }
 .language-latex .token.italic { font-style: italic; }
 
+/* ========== Markdown Tables ========== */
+.markdown-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5em 0;
+    font-size: 0.95em;
+}
+
+.markdown-table th,
+.markdown-table td {
+    border: 1px solid #ddd;
+    padding: 0.75em 1em;
+    vertical-align: top;
+}
+
+.markdown-table th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    border-bottom: 2px solid #ccc;
+}
+
+.markdown-table tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.markdown-table tbody tr:hover {
+    background-color: #f0f0f0;
+}
+
 .close-btn {
     position: fixed;
     top: 20px;
@@ -1507,6 +1536,24 @@ a:focus, button:focus {
     .language-latex .token,
     .language-tex .token { 
         color: #d4d4d4 !important; 
+    }
+    
+    .markdown-table th,
+    .markdown-table td {
+        border-color: #444;
+    }
+    
+    .markdown-table th {
+        background-color: #2a2a2a;
+        border-bottom-color: #555;
+    }
+    
+    .markdown-table tbody tr:nth-child(even) {
+        background-color: #1a1a1a;
+    }
+    
+    .markdown-table tbody tr:hover {
+        background-color: #252525;
     }
 
     .close-btn {

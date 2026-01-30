@@ -50,6 +50,115 @@ function formatDate(dateString) {
     return date.toLocaleDateString(undefined, options);
 }
 
+// TABLE PROCESSING FUNCTION
+function processMarkdownTables(text) {
+    const lines = text.split('\n');
+    const result = [];
+    let i = 0;
+    
+    while (i < lines.length) {
+        const line = lines[i];
+        
+        // Check if this line looks like a table row (starts and ends with |, or has | in it)
+        if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+            // Potential table start - look for separator row
+            if (i + 1 < lines.length) {
+                const nextLine = lines[i + 1].trim();
+                // Check if next line is a separator (contains only |, -, :, and spaces)
+                if (nextLine.startsWith('|') && /^[\|\-:\s]+$/.test(nextLine)) {
+                    // This is a table! Parse it
+                    const tableLines = [line];
+                    let j = i + 1;
+                    
+                    // Collect all table lines
+                    while (j < lines.length && lines[j].trim().startsWith('|') && lines[j].trim().endsWith('|')) {
+                        tableLines.push(lines[j]);
+                        j++;
+                    }
+                    
+                    // Parse the table
+                    const tableHtml = parseTable(tableLines);
+                    result.push(tableHtml);
+                    
+                    i = j; // Skip past the table
+                    continue;
+                }
+            }
+        }
+        
+        result.push(line);
+        i++;
+    }
+    
+    return result.join('\n');
+}
+
+function parseTable(tableLines) {
+    if (tableLines.length < 2) return tableLines.join('\n');
+    
+    // Parse header row
+    const headerRow = parseTableRow(tableLines[0]);
+    
+    // Parse separator row to get alignments
+    const separatorRow = tableLines[1].trim();
+    const alignments = parseSeparatorRow(separatorRow);
+    
+    // Parse data rows
+    const dataRows = tableLines.slice(2).map(line => parseTableRow(line));
+    
+    // Build HTML table - NO internal newlines
+    let html = '<table class="markdown-table">';
+    
+    // Header
+    html += '<thead><tr>';
+    headerRow.forEach((cell, idx) => {
+        const align = alignments[idx] || 'left';
+        html += `<th style="text-align: ${align}">${cell.trim()}</th>`;
+    });
+    html += '</tr></thead>';
+    
+    // Body
+    if (dataRows.length > 0) {
+        html += '<tbody>';
+        dataRows.forEach(row => {
+            html += '<tr>';
+            row.forEach((cell, idx) => {
+                const align = alignments[idx] || 'left';
+                html += `<td style="text-align: ${align}">${cell.trim()}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody>';
+    }
+    
+    html += '</table>';
+    return html;
+}
+
+function parseTableRow(line) {
+    // Remove leading and trailing |, then split by |
+    let trimmed = line.trim();
+    if (trimmed.startsWith('|')) trimmed = trimmed.slice(1);
+    if (trimmed.endsWith('|')) trimmed = trimmed.slice(0, -1);
+    
+    // Split by | but be careful with escaped pipes or pipes in LaTeX
+    // For now, simple split - LaTeX should already be protected by placeholders
+    return trimmed.split('|');
+}
+
+function parseSeparatorRow(line) {
+    const cells = parseTableRow(line);
+    return cells.map(cell => {
+        const trimmed = cell.trim();
+        const leftColon = trimmed.startsWith(':');
+        const rightColon = trimmed.endsWith(':');
+        
+        if (leftColon && rightColon) return 'center';
+        if (rightColon) return 'right';
+        return 'left';
+    });
+}
+
 function renderMarkdown(content) {
     // Step 0: Extract and placeholder code blocks FIRST (highest priority)
     const codeBlocks = [];
@@ -125,7 +234,16 @@ function renderMarkdown(content) {
         return placeholder;
     });
 
-    // Step 4: Process the rest of the markdown (without code blocks, inline code, code containers, or LaTeX)
+    // Step 4: Process tables and protect them with placeholders
+    const tables = [];
+    html = processMarkdownTables(html);
+    html = html.replace(/<table class="markdown-table">.*?<\/table>/gs, (match) => {
+        const placeholder = `__TABLE_${tables.length}__`;
+        tables.push(match);
+        return placeholder;
+    });
+
+    // Step 5: Process the rest of the markdown (without code blocks, inline code, code containers, LaTeX, or tables)
     html = html
         // Headers
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -141,8 +259,7 @@ function renderMarkdown(content) {
         // Blockquotes
         .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
 
-    // Step 5: Handle lists
-    // Step 5: Handle lists
+    // Step 6: Handle lists
     // First, convert markdown unordered lists to ordered list items
     html = html.replace(/^- (.*$)/gim, '<li>$1</li>');
     
@@ -184,36 +301,41 @@ function renderMarkdown(content) {
     
     html = processedLines.join('\n');
 
-    // Step 6: Process paragraphs and line breaks (but not inside code blocks or LaTeX)
+    // Step 7: Process paragraphs and line breaks (but not inside code blocks, LaTeX, or tables)
     html = html
         .replace(/\n\n/g, '</p><p>')
-        .replace(/\n(?!<li>|<\/ol>)/g, '<br>')  // Don't add <br> before <li> or </ol>
-        .replace(/(<ol>)\n/g, '$1')             // Remove newline after <ol>
-        .replace(/(<\/li>)\n/g, '$1');          // Remove newline after </li>
+        .replace(/\n(?!<li>|<\/ol>|__TABLE_)/g, '<br>')
+        .replace(/(<ol>)\n/g, '$1')
+        .replace(/(<\/li>)\n/g, '$1');
 
-    // Step 7: Wrap in paragraphs and clean up
+    // Step 8: Wrap in paragraphs and clean up
     html = `<p>${html}</p>`
         .replace(/<p><\/p>/g, '')
-        .replace(/<p>(<\/?(?:pre|h\d|blockquote|ol|div)[^>]*>)/g, '$1')
-        .replace(/(<\/?(?:pre|h\d|blockquote|ol|div)[^>]*>)<\/p>/g, '$1');
+        .replace(/<p>(<\/?(?:pre|h\d|blockquote|ol|div|__TABLE_)[^>]*>)/g, '$1')
+        .replace(/(<\/?(?:pre|h\d|blockquote|ol|div|__TABLE_)[^>]*>)<\/p>/g, '$1');
 
-    // Step 8: Restore the protected code blocks
+    // Step 9: Restore the protected code blocks
     codeBlocks.forEach((codeBlock, index) => {
         html = html.replace(`__CODEBLOCK_${index}__`, codeBlock);
     });
 
-    // Step 9: Restore the protected LaTeX blocks
+    // Step 12: Restore the protected tables
+    tables.forEach((table, index) => {
+        html = html.replace(`__TABLE_${index}__`, table);
+    });
+    
+    // Step 11: Restore the protected LaTeX blocks
     latexBlocks.forEach((latexBlock, index) => {
         html = html.replace(`__LATEXBLOCK_${index}__`, latexBlock);
     });
 
-    // Step 10: Create code container divs with data attributes for script loading
+    // Step 12: Create code container divs with data attributes for script loading
     codeContainers.forEach((scriptPath, index) => {
         const containerHtml = `<div class="code-container" data-script="${scriptPath}" id="codeContainer-${index}"></div>`;
         html = html.replace(`__CODECONTAINER_${index}__`, containerHtml);
     });
 
-    // Step 11: Restore inline code (last, after all other processing)
+    // Step 13: Restore inline code (last, after all other processing)
     inlineCode.forEach((code, index) => {
         html = html.replace(`__INLINECODE_${index}__`, code);
     });
@@ -225,7 +347,8 @@ const markdownFiles = [
     "./nbody_comparison/web/index.md",
     "./textbook_notes/chapter_0/notes-1.md",
     "./textbook_notes/chapter_0/exercises-1.md",
-    "./fem_1d_benchmark/web/fem_1d_benchmark_project.md"
+    "./fem_1d_benchmark/web/fem_1d_benchmark_project.md",
+    "./textbook_notes/chapter_0/sobolev_fem_foundations.md"
 ];
 
 function parseFrontMatter(content) {
