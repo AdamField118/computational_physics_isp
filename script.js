@@ -324,18 +324,35 @@ function renderMarkdown(content) {
         html = html.replace(`__TABLE_${index}__`, table);
     });
     
-    // Step 11: Restore the protected LaTeX blocks
+    
+    // Step 13: Reprocess the rest of the markdown specifically for text inside the tables
+    html = html
+        // Headers
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        // Images (must be before links)
+        .replace(/!\[([^\]]+)\]\(([^)]+)\)/gim, '<img src="$2" alt="$1">')
+        // Links
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2">$1</a>')
+        // Bold and italic
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+        // Blockquotes
+        .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
+    
+    // Step 14: Restore the protected LaTeX blocks
     latexBlocks.forEach((latexBlock, index) => {
         html = html.replace(`__LATEXBLOCK_${index}__`, latexBlock);
     });
 
-    // Step 12: Create code container divs with data attributes for script loading
+    // Step 15: Create code container divs with data attributes for script loading
     codeContainers.forEach((scriptPath, index) => {
         const containerHtml = `<div class="code-container" data-script="${scriptPath}" id="codeContainer-${index}"></div>`;
         html = html.replace(`__CODECONTAINER_${index}__`, containerHtml);
     });
 
-    // Step 13: Restore inline code (last, after all other processing)
+    // Step 16: Restore inline code (last, after all other processing)
     inlineCode.forEach((code, index) => {
         html = html.replace(`__INLINECODE_${index}__`, code);
     });
