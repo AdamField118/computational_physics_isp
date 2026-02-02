@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Rust
+target/
+*.lock
+
+# Common build dirs
+build/
+dist/
+
+# Object files
+*.so
+
+# Slurm 
+*.out
+*.err
+
+# Fortran compiled binaries
+
+# ./learning_fortran/helloworld
+helloworld
