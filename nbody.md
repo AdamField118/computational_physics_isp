@@ -54,40 +54,40 @@ computational_physics_isp/
 ## Implementation Plan
 
 ### Phase 1: Core Physics & JAX Implementation (Week 1)
-- [ ] Define N-body equations (Newton's law of gravitation)
-- [ ] Choose numerical integrator (Velocity Verlet or RK4)
-- [ ] Implement in JAX with JIT compilation
-- [ ] Create initial conditions generator (random, solar system, galaxy, etc.)
-- [ ] Basic visualization in Python
+-  Define N-body equations (Newton's law of gravitation)
+-  Choose numerical integrator (Velocity Verlet or RK4)
+-  Implement in JAX with JIT compilation
+-  Create initial conditions generator (random, solar system, galaxy, etc.)
+-  Basic visualization in Python
 
 ### Phase 2: Compiled Language Implementations (Week 2-3)
-- [ ] Fortran implementation with OpenMP parallelization
-- [ ] C implementation (baseline, then OpenMP)
-- [ ] C++ implementation with modern features
-- [ ] f2py wrapper for Fortran
-- [ ] pybind11 for C++
-- [ ] ctypes/CFFI for C
+-  Fortran implementation with OpenMP parallelization
+-  C implementation (baseline, then OpenMP)
+-  C++ implementation with modern features
+-  f2py wrapper for Fortran
+-  pybind11 for C++
+-  ctypes/CFFI for C
 
 ### Phase 3: Benchmarking & Validation (Week 4)
-- [ ] Accuracy tests (all implementations produce same results)
-- [ ] Performance benchmarks:
+-  Accuracy tests (all implementations produce same results)
+-  Performance benchmarks:
   - Vary N (particles): 100, 1000, 10000
   - Vary timesteps: 100, 1000, 10000
   - Time per step, total runtime, memory usage
-- [ ] Profile each implementation
-- [ ] Generate comparison plots
+-  Profile each implementation
+-  Generate comparison plots
 
 ### Phase 4: Visualization & Frontend (Week 5)
-- [ ] Python-based animation (matplotlib/plotly)
-- [ ] HTML/Three.js interactive 3D visualization
-- [ ] Dashboard showing benchmark results
-- [ ] Real-time parameter adjustment (if possible)
+-  Python-based animation (matplotlib/plotly)
+-  HTML/Three.js interactive 3D visualization
+-  Dashboard showing benchmark results
+-  Real-time parameter adjustment (if possible)
 
 ### Phase 5: Documentation & Writeup (Week 6)
-- [ ] Theory documentation
-- [ ] Code documentation (docstrings, comments)
-- [ ] Results analysis writeup
-- [ ] Create presentation/poster
+-  Theory documentation
+-  Code documentation (docstrings, comments)
+-  Results analysis writeup
+-  Create presentation/poster
 
 ## N-Body Physics Equations
 
