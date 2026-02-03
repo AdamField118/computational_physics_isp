@@ -267,7 +267,8 @@ class BenchmarkRunner:
         
         try:
             import fem_fortran
-            return fem_fortran.assemble_system
+            # f2py requires keyword arguments for proper dimension checking
+            return lambda n, f_vals: fem_fortran.assemble_system(n=n, f_vals=f_vals)
         except ImportError as e:
             print(f"⚠️  Failed to import Fortran module: {e}")
             return None
@@ -276,7 +277,8 @@ class BenchmarkRunner:
         """Load Fortran serial implementation"""
         try:
             import fem_fortran
-            return fem_fortran.assemble_system_serial
+            # f2py requires keyword arguments for proper dimension checking
+            return lambda n, f_vals: fem_fortran.assemble_system_serial(n=n, f_vals=f_vals)
         except:
             return None
     

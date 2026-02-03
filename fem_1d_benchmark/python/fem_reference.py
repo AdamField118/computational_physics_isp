@@ -1,5 +1,5 @@
 """
-1D Finite Element Method - Python Reference Implementation
+1D Finite Element Method - Python Reference Implementation (Optimized)
 Based on Chapter 0, Section 0.4 of Brenner & Scott
 """
 
@@ -18,7 +18,7 @@ def source_term(x):
 
 def assemble_system(n, f_vals):
     """
-    Assemble stiffness matrix K and load vector F.
+    Assemble stiffness matrix and load vector.
     
     Parameters:
     -----------
@@ -35,6 +35,7 @@ def assemble_system(n, f_vals):
         Load vector (with BC applied)
     """
     h = 1.0 / n
+    k_local = 1.0 / h  # Compute once, not in loop
     
     # Allocate arrays
     K = np.zeros((n, n))
@@ -42,8 +43,6 @@ def assemble_system(n, f_vals):
     
     # Assemble stiffness matrix element by element
     for e in range(1, n+1):
-        k_local = 1.0 / h
-        
         i_left = e - 1
         i_right = e
         
@@ -62,6 +61,7 @@ def assemble_system(n, f_vals):
     for i in range(1, n):
         F[i-1] = (h / 2.0) * (f_vals[i-1] + f_vals[i+1])
     
+    # Last node uses only left contribution (Neumann BC on right)
     F[n-1] = (h / 2.0) * f_vals[n-1]
     
     return K, F

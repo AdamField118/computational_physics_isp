@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEM 1D Benchmark Results</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .metadata {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .chart-container {
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.5em;
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        canvas {
+            max-height: 400px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .fastest {
+            background: #d4edda;
+            font-weight: bold;
+        }
+        
+        .speedup {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            }
+            
+            .container {
+                background: #1e1e1e;
+                color: #e0e0e0;
+            }
+            
+            h1 {
+                color: #9b59b6;
+            }
+            
+            .subtitle {
+                color: #aaa;
+            }
+            
+            .metadata {
+                background: #2a2a2a;
+                border-left-color: #9b59b6;
+            }
+            
+            .chart-container {
+                background: #2a2a2a;
+            }
+            
+            .chart-title {
+                color: #9b59b6;
+            }
+            
+            table {
+                background: #2a2a2a;
+            }
+            
+            th {
+                background: #9b59b6;
+            }
+            
+            td {
+                color: #e0e0e0;
+            }
+            
+            tr:hover {
+                background: #333;
+            }
+            
+            .fastest {
+                background: #1e4620;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>1D FEM Multi-Language Benchmark</h1>
+        <p class="subtitle">Performance comparison of piecewise linear finite element assembly</p>
+        
+        <div class="metadata">
+            <strong>Problem:</strong> 1D FEM Assembly (Uniform Interface)<br>
+            <strong>Description:</strong> All languages receive pre-allocated arrays - fair comparison<br>
+            <strong>Date:</strong> 2026-02-02T20:02:05.476412<br>
+            <strong>Implementations:</strong> Python, C, C++, Fortran, Julia, Rust
+        </div>
+        
+        <div class="chart-container">
+            <h2 class="chart-title">Performance: Assembly Time vs Problem Size</h2>
+            <canvas id="performanceChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h2 class="chart-title">Speedup vs Python</h2>
+            <canvas id="speedupChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h2 class="chart-title">Performance Summary (n=20000)</h2>
+            
+    <table>
+        <thead>
+            <tr>
+                <th>Implementation</th>
+                <th>Time (ms)</th>
+                <th>Speedup vs Python</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="fastest"><td>Rust  🏆</td><td>0.531 ± 0.008</td><td class="speedup">294.26x</td></tr><tr><td>Fortran</td><td>0.531 ± 0.004</td><td class="speedup">294.09x</td></tr><tr><td>C++</td><td>0.547 ± 0.014</td><td class="speedup">285.89x</td></tr><tr><td>C</td><td>0.566 ± 0.008</td><td class="speedup">276.32x</td></tr><tr><td>Python</td><td>156.295 ± 0.414</td><td class="speedup">1.00x</td></tr><tr><td>Julia</td><td>1845.302 ± 27.807</td><td class="speedup">0.08x</td></tr>
+        </tbody>
+    </table>
+    
+        </div>
+    </div>
+    
+    <script>
+        const data = {"metadata": {"date": "2026-02-02T20:02:05.476412", "problem": "1D FEM Assembly (Uniform Interface)", "description": "All languages receive pre-allocated arrays - fair comparison"}, "benchmarks": [{"name": "Python", "results": [{"n": 500, "mean": 0.000593616598052904, "std": 8.589619867565167e-06, "min": 0.0005871730099897832, "max": 0.0006101219914853573}, {"n": 1000, "mean": 0.0018055107968393714, "std": 0.00026667238973685853, "min": 0.0015776619839016348, "max": 0.0022467829985544086}, {"n": 5000, "mean": 0.018514598003821447, "std": 6.25880620129247e-05, "min": 0.01844810100737959, "max": 0.01861304900376126}, {"n": 10000, "mean": 0.05207458459190093, "std": 0.0017352417064776038, "min": 0.050135537981987, "max": 0.054837100993609056}, {"n": 20000, "mean": 0.15629533539758994, "std": 0.0004139306369100561, "min": 0.15557291998993605, "max": 0.15670586199848913}]}, {"name": "C", "results": [{"n": 500, "mean": 2.31220037676394e-05, "std": 3.183621177035916e-06, "min": 2.0570994820445776e-05, "max": 2.8790993383154273e-05}, {"n": 1000, "mean": 2.3774197325110434e-05, "std": 1.0089203691911201e-06, "min": 2.283899812027812e-05, "max": 2.5716988602653146e-05}, {"n": 5000, "mean": 8.562459843233227e-05, "std": 6.494935777175291e-06, "min": 7.979400106705725e-05, "max": 9.794699144549668e-05}, {"n": 10000, "mean": 0.00022092979052104055, "std": 9.283337854581965e-06, "min": 0.00021192498388700187, "max": 0.00023767098900862038}, {"n": 20000, "mean": 0.0005656382010784001, "std": 8.24541541389446e-06, "min": 0.0005541400169022381, "max": 0.0005766579997725785}]}, {"name": "C++", "results": [{"n": 500, "mean": 9.56220319494605e-06, "std": 2.200889186783406e-06, "min": 8.319999324157834e-06, "max": 1.3960001524537802e-05}, {"n": 1000, "mean": 1.134300255216658e-05, "std": 3.593657007904862e-07, "min": 1.0910996934399009e-05, "max": 1.1872005416080356e-05}, {"n": 5000, "mean": 6.904079928062856e-05, "std": 5.43114863645525e-06, "min": 6.216100882738829e-05, "max": 7.749599171802402e-05}, {"n": 10000, "mean": 0.00020532679045572876, "std": 7.834871928223838e-06, "min": 0.0001967559801414609, "max": 0.00021719498909078538}, {"n": 20000, "mean": 0.0005466944014187903, "std": 1.3567072084354774e-05, "min": 0.0005308320105541497, "max": 0.0005709179968107492}]}, {"name": "Fortran", "results": [{"n": 500, "mean": 6.095797289162874e-06, "std": 1.139031513658827e-06, "min": 5.27501106262207e-06, "max": 8.347997209057212e-06}, {"n": 1000, "mean": 8.102599531412125e-06, "std": 2.2655679772412866e-07, "min": 7.79700349085033e-06, "max": 8.487026207149029e-06}, {"n": 5000, "mean": 5.625380435958505e-05, "std": 6.166468169632746e-06, "min": 5.063600838184357e-05, "max": 6.739000673405826e-05}, {"n": 10000, "mean": 0.00018802059930749236, "std": 6.053479974976451e-06, "min": 0.00018060198635794222, "max": 0.00019892200361937284}, {"n": 20000, "mean": 0.0005314596055541188, "std": 3.888236307537854e-06, "min": 0.0005271779955364764, "max": 0.0005386130069382489}]}, {"name": "Julia", "results": [{"n": 500, "mean": 0.0013166116084903478, "std": 0.00025346846462801886, "min": 0.0008142820151988417, "max": 0.0015042430022731423}, {"n": 1000, "mean": 0.018855592398904265, "std": 0.030580407458093217, "min": 0.003480137005681172, "max": 0.08001623500604182}, {"n": 5000, "mean": 0.11593856800463982, "std": 0.002044943908744592, "min": 0.11245493000023998, "max": 0.11837882400141098}, {"n": 10000, "mean": 0.46529327940079385, "std": 0.011587739233386652, "min": 0.4524745979870204, "max": 0.48653084502439015}, {"n": 20000, "mean": 1.8453022646019235, "std": 0.027807226242947153, "min": 1.8122279990056995, "max": 1.880953537998721}]}, {"name": "Rust", "results": [{"n": 500, "mean": 6.317807128652931e-06, "std": 2.0753330626303248e-06, "min": 4.986999556422234e-06, "max": 1.0431016562506557e-05}, {"n": 1000, "mean": 6.9185975007712844e-06, "std": 1.1241252355651236e-06, "min": 5.826994311064482e-06, "max": 9.08499350771308e-06}, {"n": 5000, "mean": 7.722500013187527e-05, "std": 5.074652147149179e-06, "min": 7.264799205586314e-05, "max": 8.651698590256274e-05}, {"n": 10000, "mean": 0.00020718720625154675, "std": 1.1384167560704993e-05, "min": 0.00019904301734641194, "max": 0.0002293430152349174}, {"n": 20000, "mean": 0.0005311559943947941, "std": 8.393169261543415e-06, "min": 0.0005198699946049601, "max": 0.000543628993909806}]}]};
+        
+        // Performance chart (log-log scale)
+        {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            const datasets = data.benchmarks.map((bench, idx) => ({
+                label: bench.name,
+                data: bench.results.map(r => ({x: r.n, y: r.mean * 1000})),
+                borderColor: `hsl(${idx * 360 / data.benchmarks.length}, 70%, 50%)`,
+                backgroundColor: `hsla(${idx * 360 / data.benchmarks.length}, 70%, 50%, 0.1)`,
+                borderWidth: 2,
+                pointRadius: 4,
+                tension: 0.1
+            }));
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            type: 'logarithmic',
+                            title: { display: true, text: 'Number of elements (n)' }
+                        },
+                        y: {
+                            type: 'logarithmic',
+                            title: { display: true, text: 'Assembly time (ms)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(3)} ms`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Speedup chart
+        {
+            const ctx = document.getElementById('speedupChart').getContext('2d');
+            const pythonData = data.benchmarks.find(b => b.name === 'Python').results;
+            
+            const datasets = data.benchmarks
+                .filter(b => b.name !== 'Python')
+                .map((bench, idx) => ({
+                    label: bench.name,
+                    data: bench.results.map((r, i) => ({
+                        x: r.n,
+                        y: pythonData[i].mean / r.mean
+                    })),
+                    borderColor: `hsl(${idx * 360 / (data.benchmarks.length - 1)}, 70%, 50%)`,
+                    backgroundColor: `hsla(${idx * 360 / (data.benchmarks.length - 1)}, 70%, 50%, 0.1)`,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    tension: 0.1
+                }));
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            type: 'logarithmic',
+                            title: { display: true, text: 'Number of elements (n)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Speedup vs Python' },
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(2)}x`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
