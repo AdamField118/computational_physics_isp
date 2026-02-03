@@ -181,18 +181,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
         
         <div class="chart-container">
-            <h2 class="chart-title">Parallel Performance: Assembly Time vs Problem Size</h2>
+            <h2 class="chart-title">Performance: Assembly Time vs Problem Size</h2>
             <canvas id="performanceChart"></canvas>
         </div>
         
         <div class="chart-container">
-            <h2 class="chart-title">Speedup vs Python (Parallel)</h2>
+            <h2 class="chart-title">Speedup vs Python</h2>
             <canvas id="speedupChart"></canvas>
-        </div>
-        
-        <div class="chart-container">
-            <h2 class="chart-title">Parallel vs Serial Performance</h2>
-            <canvas id="parallelChart"></canvas>
         </div>
         
         <div class="chart-container">
@@ -204,12 +199,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <script>
         const data = {data_json};
         
-        // Performance chart
+        // Performance chart (log-log scale)
         {{
             const ctx = document.getElementById('performanceChart').getContext('2d');
             const datasets = data.benchmarks.map((bench, idx) => ({{
-                label: bench.name + ' (Parallel)',
-                data: bench.results.parallel.map(r => ({{x: r.n, y: r.mean * 1000}})),
+                label: bench.name,
+                data: bench.results.map(r => ({{x: r.n, y: r.mean * 1000}})),
                 borderColor: `hsl(${{idx * 360 / data.benchmarks.length}}, 70%, 50%)`,
                 backgroundColor: `hsla(${{idx * 360 / data.benchmarks.length}}, 70%, 50%, 0.1)`,
                 borderWidth: 2,
@@ -248,13 +243,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         // Speedup chart
         {{
             const ctx = document.getElementById('speedupChart').getContext('2d');
-            const pythonData = data.benchmarks.find(b => b.name === 'Python').results.parallel;
+            const pythonData = data.benchmarks.find(b => b.name === 'Python').results;
             
             const datasets = data.benchmarks
                 .filter(b => b.name !== 'Python')
                 .map((bench, idx) => ({{
                     label: bench.name,
-                    data: bench.results.parallel.map((r, i) => ({{
+                    data: bench.results.map((r, i) => ({{
                         x: r.n,
                         y: pythonData[i].mean / r.mean
                     }})),
@@ -277,7 +272,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                             title: {{ display: true, text: 'Number of elements (n)' }}
                         }},
                         y: {{
-                            title: {{ display: true, text: 'Speedup vs Python' }}
+                            title: {{ display: true, text: 'Speedup vs Python' }},
+                            beginAtZero: true
                         }}
                     }},
                     plugins: {{
@@ -285,59 +281,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                         tooltip: {{
                             callbacks: {{
                                 label: (context) => `${{context.dataset.label}}: ${{context.parsed.y.toFixed(2)}}x`
-                            }}
-                        }}
-                    }}
-                }}
-            }});
-        }}
-        
-        // Parallel vs Serial chart
-        {{
-            const ctx = document.getElementById('parallelChart').getContext('2d');
-            const n_values = data.benchmarks[0].results.parallel.map(r => r.n);
-            
-            const datasets = [];
-            data.benchmarks.forEach((bench, idx) => {{
-                if (bench.parallel && bench.results.serial) {{
-                    const color = `hsl(${{idx * 360 / data.benchmarks.length}}, 70%, 50%)`;
-                    
-                    datasets.push({{
-                        label: bench.name + ' (Serial)',
-                        data: bench.results.serial.map((r, i) => ({{
-                            x: r.n,
-                            y: bench.results.serial[i].mean / bench.results.parallel[i].mean
-                        }})),
-                        borderColor: color,
-                        backgroundColor: `hsla(${{idx * 360 / data.benchmarks.length}}, 70%, 50%, 0.1)`,
-                        borderWidth: 2,
-                        pointRadius: 4,
-                        borderDash: [5, 5],
-                        tension: 0.1
-                    }});
-                }}
-            }});
-            
-            new Chart(ctx, {{
-                type: 'line',
-                data: {{ datasets }},
-                options: {{
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {{
-                        x: {{
-                            type: 'logarithmic',
-                            title: {{ display: true, text: 'Number of elements (n)' }}
-                        }},
-                        y: {{
-                            title: {{ display: true, text: 'Parallel Speedup (Serial / Parallel)' }}
-                        }}
-                    }},
-                    plugins: {{
-                        legend: {{ position: 'top' }},
-                        tooltip: {{
-                            callbacks: {{
-                                label: (context) => `${{context.dataset.label}}: ${{context.parsed.y.toFixed(2)}}x speedup`
                             }}
                         }}
                     }}
@@ -353,63 +296,45 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 def generate_summary_table(data):
     """Generate HTML table with benchmark summary"""
     # Get largest problem size
-    max_n = data['benchmarks'][0]['results']['parallel'][-1]['n']
+    max_n = data['benchmarks'][0]['results'][-1]['n']
     
     # Get Python time for reference
     python_bench = next(b for b in data['benchmarks'] if b['name'] == 'Python')
-    python_time = python_bench['results']['parallel'][-1]['mean']
+    python_time = python_bench['results'][-1]['mean']
     
-    # Sort by parallel time
+    # Sort by time (fastest first)
     sorted_benches = sorted(data['benchmarks'], 
-                           key=lambda x: x['results']['parallel'][-1]['mean'])
+                           key=lambda x: x['results'][-1]['mean'])
     
-    fastest_time = sorted_benches[0]['results']['parallel'][-1]['mean']
+    fastest_time = sorted_benches[0]['results'][-1]['mean']
     
     rows = []
     for bench in sorted_benches:
         name = bench['name']
-        parallel_result = bench['results']['parallel'][-1]
-        parallel_time = parallel_result['mean'] * 1000
+        result = bench['results'][-1]
+        time_ms = result['mean'] * 1000
+        std_ms = result['std'] * 1000
         
-        is_fastest = parallel_result['mean'] == fastest_time
+        is_fastest = result['mean'] == fastest_time
         row_class = ' class="fastest"' if is_fastest else ''
         
-        speedup_python = python_time / parallel_result['mean']
+        speedup_python = python_time / result['mean']
         
-        if bench['parallel'] and bench['results']['serial']:
-            serial_result = bench['results']['serial'][-1]
-            serial_time = serial_result['mean'] * 1000
-            speedup_parallel = serial_result['mean'] / parallel_result['mean']
-            
-            rows.append(
-                f'<tr{row_class}>'
-                f'<td>{name}{"🏆" if is_fastest else ""}</td>'
-                f'<td>{parallel_time:.3f}</td>'
-                f'<td>{serial_time:.3f}</td>'
-                f'<td class="speedup">{speedup_parallel:.2f}x</td>'
-                f'<td class="speedup">{speedup_python:.2f}x</td>'
-                '</tr>'
-            )
-        else:
-            rows.append(
-                f'<tr{row_class}>'
-                f'<td>{name}{"🏆" if is_fastest else ""}</td>'
-                f'<td>{parallel_time:.3f}</td>'
-                f'<td>N/A</td>'
-                f'<td>N/A</td>'
-                f'<td class="speedup">{speedup_python:.2f}x</td>'
-                '</tr>'
-            )
+        rows.append(
+            f'<tr{row_class}>'
+            f'<td>{name}{"  🏆" if is_fastest else ""}</td>'
+            f'<td>{time_ms:.3f} ± {std_ms:.3f}</td>'
+            f'<td class="speedup">{speedup_python:.2f}x</td>'
+            '</tr>'
+        )
     
     return f"""
     <table>
         <thead>
             <tr>
                 <th>Implementation</th>
-                <th>Parallel (ms)</th>
-                <th>Serial (ms)</th>
-                <th>Parallel Speedup</th>
-                <th>vs Python</th>
+                <th>Time (ms)</th>
+                <th>Speedup vs Python</th>
             </tr>
         </thead>
         <tbody>
@@ -456,7 +381,7 @@ def main():
         f.write(html)
     
     print(f"✓ Dashboard generated: {output_file}")
-    print(f"  Open in browser to view results")
+    print(f"  Open in browser to view interactive results")
 
 
 if __name__ == '__main__':

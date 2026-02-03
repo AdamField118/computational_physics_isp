@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
-Comprehensive FEM 1D Benchmark Suite
-Compares Python, C, C++, Fortran, Julia, and Rust implementations
-Outputs results to JSON for web visualization
+FEM 1D Benchmark Suite - Uniform Interface (Julia Fix)
+ALL languages receive pre-allocated numpy arrays
+
+Note: Julia allocates internally (PyCall limitation) then copies back
 """
 
 import numpy as np
 import time
 import json
 import sys
+import gc
 from pathlib import Path
 from datetime import datetime
 from ctypes import CDLL, c_int, c_double
@@ -18,6 +20,10 @@ import numpy.ctypeslib as npct
 sys.path.insert(0, str(Path(__file__).parent.parent / 'python'))
 from fem_reference import assemble_system as python_assemble, source_term
 
+# Global Julia initialization flag
+_julia_initialized = False
+_julia_Main = None
+
 
 class BenchmarkSuite:
     def __init__(self):
@@ -25,59 +31,63 @@ class BenchmarkSuite:
         self.results = {
             'metadata': {
                 'date': datetime.now().isoformat(),
-                'problem': '1D FEM Assembly',
-                'description': 'Benchmark of multi-language FEM implementations'
+                'problem': '1D FEM Assembly (Uniform Interface)',
+                'description': 'All languages receive pre-allocated arrays - fair comparison'
             },
-            'implementations': {},
             'benchmarks': []
         }
     
     def load_implementations(self):
         """Load all available implementations"""
         print("=" * 70)
-        print("LOADING IMPLEMENTATIONS")
+        print("LOADING IMPLEMENTATIONS (Uniform Interface)")
         print("=" * 70)
+        print("All languages receive pre-allocated numpy arrays\n")
         
-        # Always available: Python reference
+        # Python reference
+        def python_wrapper(n, f_vals, K, F):
+            """Python fills pre-allocated arrays"""
+            K_temp, F_temp = python_assemble(n, f_vals)
+            K[:] = K_temp
+            F[:] = F_temp
+        
         self.implementations['Python'] = {
-            'assemble': python_assemble,
-            'parallel': False,
-            'serial': python_assemble
+            'assemble': python_wrapper,
+            'order': 'C'
         }
         print("✓ Python reference loaded")
         
-        # Try to load C
+        # C
         c_impl = self._load_c()
         if c_impl:
             self.implementations['C'] = c_impl
             print("✓ C (OpenMP) loaded")
         
-        # Try to load C++
+        # C++
         cpp_impl = self._load_cpp()
         if cpp_impl:
             self.implementations['C++'] = cpp_impl
             print("✓ C++ (OpenMP) loaded")
         
-        # Try to load Fortran
+        # Fortran
         fortran_impl = self._load_fortran()
         if fortran_impl:
             self.implementations['Fortran'] = fortran_impl
             print("✓ Fortran (OpenMP) loaded")
         
-        # Try to load Julia
+        # Julia
         julia_impl = self._load_julia()
         if julia_impl:
             self.implementations['Julia'] = julia_impl
             print("✓ Julia (Threads) loaded")
         
-        # Try to load Rust
+        # Rust
         rust_impl = self._load_rust()
         if rust_impl:
             self.implementations['Rust'] = rust_impl
             print("✓ Rust (Rayon) loaded")
         
-        print(f"\nLoaded {len(self.implementations)} implementations")
-        print()
+        print(f"\nLoaded {len(self.implementations)} implementations\n")
     
     def _load_c(self):
         """Load C implementation via ctypes"""
@@ -89,28 +99,20 @@ class BenchmarkSuite:
                 return None
             
             lib = CDLL(str(lib_path))
+            lib.assemble_system.argtypes = [
+                c_int,
+                npct.ndpointer(dtype=np.float64),
+                npct.ndpointer(dtype=np.float64),
+                npct.ndpointer(dtype=np.float64)
+            ]
             
-            # Set up function signatures
-            for func_name in ['assemble_system', 'assemble_system_serial']:
-                func = getattr(lib, func_name)
-                func.argtypes = [
-                    c_int,
-                    npct.ndpointer(dtype=np.float64),
-                    npct.ndpointer(dtype=np.float64),
-                    npct.ndpointer(dtype=np.float64)
-                ]
-            
-            def c_wrapper(n, f_vals, serial=False):
-                K = np.zeros((n, n), dtype=np.float64, order='C')
-                F = np.zeros(n, dtype=np.float64)
-                func = lib.assemble_system_serial if serial else lib.assemble_system
-                func(n, f_vals, K, F)
-                return K, F
+            def c_wrapper(n, f_vals, K, F):
+                """C fills pre-allocated arrays"""
+                lib.assemble_system(n, f_vals, K, F)
             
             return {
-                'assemble': lambda n, f: c_wrapper(n, f, False),
-                'serial': lambda n, f: c_wrapper(n, f, True),
-                'parallel': True
+                'assemble': c_wrapper,
+                'order': 'C'
             }
         except Exception as e:
             print(f"⚠️  Failed to load C: {e}")
@@ -124,10 +126,13 @@ class BenchmarkSuite:
             
             import fem_cpp
             
+            def cpp_wrapper(n, f_vals, K, F):
+                """C++ fills pre-allocated arrays"""
+                fem_cpp.assemble_system(n, f_vals, K, F)
+            
             return {
-                'assemble': fem_cpp.assemble_system,
-                'serial': fem_cpp.assemble_system_serial,
-                'parallel': True
+                'assemble': cpp_wrapper,
+                'order': 'C'
             }
         except Exception as e:
             print(f"⚠️  Failed to load C++: {e}")
@@ -141,10 +146,13 @@ class BenchmarkSuite:
             
             import fem_fortran
             
+            def fortran_wrapper(n, f_vals, K, F):
+                """Fortran fills pre-allocated arrays"""
+                fem_fortran.assemble_system(n=n, f_vals=f_vals, k=K, f=F)
+            
             return {
-                'assemble': fem_fortran.assemble_system,
-                'serial': fem_fortran.assemble_system_serial,
-                'parallel': True
+                'assemble': fortran_wrapper,
+                'order': 'F'
             }
         except Exception as e:
             print(f"⚠️  Failed to load Fortran: {e}")
@@ -152,26 +160,40 @@ class BenchmarkSuite:
     
     def _load_julia(self):
         """Load Julia implementation via PyJulia"""
+        global _julia_initialized, _julia_Main
+        
         try:
-            from julia.api import Julia
-            jl = Julia(compiled_modules=False)
-            from julia import Main
-            julia_path = Path(__file__).parent.parent / 'julia' / 'fem_assembly.jl'
-            Main.include(str(julia_path))
+            # Initialize Julia only once
+            if not _julia_initialized:
+                from julia.api import Julia
+                jl = Julia(compiled_modules=False)
+                from julia import Main
+                julia_path = Path(__file__).parent.parent / 'julia' / 'fem_assembly.jl'
+                Main.include(str(julia_path))
+                _julia_Main = Main
+                _julia_initialized = True
             
-            def julia_wrapper(n, f_vals):
-                # Julia uses 1-based indexing
-                K, F = Main.assemble_system(n, f_vals)
-                return np.array(K), np.array(F)
+            Main = _julia_Main
             
-            def julia_wrapper_serial(n, f_vals):
-                K, F = Main.assemble_system_serial(n, f_vals)
-                return np.array(K), np.array(F)
+            def julia_wrapper(n, f_vals, K, F):
+                """Julia allocates internally, then copies to pre-allocated arrays"""
+                # PyCall doesn't reliably support in-place modification
+                # So Julia allocates and returns, we copy back
+                f_vals = np.asarray(f_vals, dtype=np.float64)
+                
+                # Julia allocates and returns
+                K_julia, F_julia = Main.assemble_system(int(n), f_vals)
+                
+                # Copy back to pre-allocated arrays
+                K[:] = np.array(K_julia, dtype=np.float64)
+                F[:] = np.array(F_julia, dtype=np.float64)
+                
+                # Clean up Julia objects
+                del K_julia, F_julia
             
             return {
                 'assemble': julia_wrapper,
-                'serial': julia_wrapper_serial,
-                'parallel': True
+                'order': 'F'  # Julia uses column-major
             }
         except Exception as e:
             print(f"⚠️  Failed to load Julia: {e}")
@@ -185,10 +207,13 @@ class BenchmarkSuite:
             
             import fem_rust
             
+            def rust_wrapper(n, f_vals, K, F):
+                """Rust fills pre-allocated arrays"""
+                fem_rust.assemble_system(n, f_vals, K, F)
+            
             return {
-                'assemble': fem_rust.assemble_system,
-                'serial': fem_rust.assemble_system_serial,
-                'parallel': True
+                'assemble': rust_wrapper,
+                'order': 'C'
             }
         except Exception as e:
             print(f"⚠️  Failed to load Rust: {e}")
@@ -206,7 +231,9 @@ class BenchmarkSuite:
         f_vals = source_term(x)
         
         # Get reference solution
-        K_ref, F_ref = python_assemble(n, f_vals)
+        K_ref = np.zeros((n, n), dtype=np.float64, order='C')
+        F_ref = np.zeros(n, dtype=np.float64)
+        self.implementations['Python']['assemble'](n, f_vals, K_ref, F_ref)
         
         print(f"{'Implementation':<15} {'Max K diff':<15} {'Max F diff':<15} {'Status':<10}")
         print("-" * 70)
@@ -219,8 +246,15 @@ class BenchmarkSuite:
                 continue
             
             try:
-                K, F = impl['assemble'](n, f_vals)
+                # Allocate arrays with correct order for this language
+                order = impl['order']
+                K = np.zeros((n, n), dtype=np.float64, order=order)
+                F = np.zeros(n, dtype=np.float64)
                 
+                # Fill arrays
+                impl['assemble'](n, f_vals, K, F)
+                
+                # Compare
                 k_diff = np.max(np.abs(K - K_ref))
                 f_diff = np.max(np.abs(F - F_ref))
                 
@@ -231,9 +265,16 @@ class BenchmarkSuite:
                     all_pass = False
                 
                 print(f"{name:<15} {k_diff:<15.2e} {f_diff:<15.2e} {status:<10}")
+                
+                del K, F
+                gc.collect()
+                
             except Exception as e:
                 print(f"{name:<15} {'ERROR':<15} {str(e):<15} {'✗ FAIL':<10}")
                 all_pass = False
+        
+        del K_ref, F_ref
+        gc.collect()
         
         print("-" * 70)
         if all_pass:
@@ -249,76 +290,49 @@ class BenchmarkSuite:
         print(f"\nBenchmarking {name}...")
         
         impl = self.implementations[name]
-        results_parallel = []
-        results_serial = [] if impl['parallel'] else None
+        order = impl['order']
+        results = []
         
         for n in n_values:
+            gc.collect()
+            
             x = np.linspace(0, 1, n+1)
             f_vals = source_term(x)
             
+            # Pre-allocate arrays with correct order
+            K = np.zeros((n, n), dtype=np.float64, order=order)
+            F = np.zeros(n, dtype=np.float64)
+            
             # Warmup
-            _ = impl['assemble'](n, f_vals)
+            impl['assemble'](n, f_vals, K, F)
             
-            # Parallel version
-            times_parallel = []
+            # Timed runs
+            times = []
             for _ in range(n_trials):
+                K.fill(0.0)
+                F.fill(0.0)
+                
+                gc.collect()
                 start = time.perf_counter()
-                K, F = impl['assemble'](n, f_vals)
+                impl['assemble'](n, f_vals, K, F)
                 end = time.perf_counter()
-                times_parallel.append(end - start)
+                times.append(end - start)
             
-            results_parallel.append({
+            results.append({
                 'n': n,
-                'mean': np.mean(times_parallel),
-                'std': np.std(times_parallel),
-                'min': np.min(times_parallel),
-                'max': np.max(times_parallel)
+                'mean': np.mean(times),
+                'std': np.std(times),
+                'min': np.min(times),
+                'max': np.max(times)
             })
             
-            print(f"  n={n:6d} (parallel): {np.mean(times_parallel)*1000:8.3f} ± "
-                  f"{np.std(times_parallel)*1000:6.3f} ms (min: {np.min(times_parallel)*1000:7.3f} ms)")
+            print(f"  n={n:6d}: {np.mean(times)*1000:8.3f} ± {np.std(times)*1000:6.3f} ms "
+                  f"(min: {np.min(times)*1000:7.3f} ms)")
             
-            # Serial version if available
-            if impl['parallel']:
-                times_serial = []
-                for _ in range(n_trials):
-                    start = time.perf_counter()
-                    K, F = impl['serial'](n, f_vals)
-                    end = time.perf_counter()
-                    times_serial.append(end - start)
-                
-                results_serial.append({
-                    'n': n,
-                    'mean': np.mean(times_serial),
-                    'std': np.std(times_serial),
-                    'min': np.min(times_serial),
-                    'max': np.max(times_serial)
-                })
-                
-                speedup = np.mean(times_serial) / np.mean(times_parallel)
-                print(f"  n={n:6d} (serial):   {np.mean(times_serial)*1000:8.3f} ± "
-                      f"{np.std(times_serial)*1000:6.3f} ms (speedup: {speedup:.2f}x)")
+            del K, F, x, f_vals
+            gc.collect()
         
-        return {
-            'parallel': results_parallel,
-            'serial': results_serial
-        }
-    
-    def run_benchmarks(self, n_values, n_trials=5):
-        """Run benchmarks on all implementations"""
-        print("\n" + "=" * 70)
-        print("PERFORMANCE BENCHMARKING")
-        print("=" * 70)
-        print(f"Problem sizes: {n_values}")
-        print(f"Trials per size: {n_trials}\n")
-        
-        for name in self.implementations.keys():
-            results = self.benchmark_implementation(name, n_values, n_trials)
-            self.results['benchmarks'].append({
-                'name': name,
-                'parallel': self.implementations[name]['parallel'],
-                'results': results
-            })
+        return results
     
     def save_results(self, output_file='fem_benchmark_results.json'):
         """Save results to JSON file"""
@@ -331,80 +345,72 @@ class BenchmarkSuite:
         print(f"\n✓ Results saved to: {output_path}")
         return output_path
     
+    def run_benchmarks(self, n_values, n_trials=5):
+        """Run benchmarks on all implementations"""
+        print("\n" + "=" * 70)
+        print("PERFORMANCE BENCHMARKING")
+        print("=" * 70)
+        print(f"Problem sizes: {n_values}")
+        print(f"Trials per size: {n_trials}")
+        print("Note: All languages receive pre-allocated arrays\n")
+        
+        for name in self.implementations.keys():
+            results = self.benchmark_implementation(name, n_values, n_trials)
+            self.results['benchmarks'].append({
+                'name': name,
+                'results': results
+            })
+            
+            self.save_results()
+            print(f"  ✓ Saved after {name}")
+            gc.collect()
+    
     def print_summary(self):
         """Print summary table"""
         print("\n" + "=" * 70)
         print("SUMMARY")
         print("=" * 70)
         
-        # Get the largest problem size
-        n_values = [r['n'] for r in self.results['benchmarks'][0]['results']['parallel']]
+        n_values = [r['n'] for r in self.results['benchmarks'][0]['results']]
         largest_n = n_values[-1]
         
         print(f"\nResults for n={largest_n}:")
-        print(f"{'Implementation':<15} {'Parallel (ms)':<15} {'Serial (ms)':<15} {'Speedup':<10}")
+        print(f"{'Implementation':<15} {'Time (ms)':<15} {'Speedup vs Python':<20}")
         print("-" * 70)
         
-        for bench in self.results['benchmarks']:
-            name = bench['name']
-            parallel_time = bench['results']['parallel'][-1]['mean'] * 1000
-            
-            if bench['parallel'] and bench['results']['serial']:
-                serial_time = bench['results']['serial'][-1]['mean'] * 1000
-                speedup = serial_time / parallel_time
-                print(f"{name:<15} {parallel_time:>13.3f}   {serial_time:>13.3f}   {speedup:>8.2f}x")
-            else:
-                print(f"{name:<15} {parallel_time:>13.3f}   {'N/A':<15} {'N/A':<10}")
-        
-        # Relative speedups vs Python
-        print(f"\nSpeedup vs Python (parallel):")
-        print(f"{'Implementation':<15} {'Speedup':<10}")
-        print("-" * 30)
-        
-        python_time = next(b['results']['parallel'][-1]['mean'] 
+        python_time = next(b['results'][-1]['mean'] 
                           for b in self.results['benchmarks'] if b['name'] == 'Python')
         
         for bench in sorted(self.results['benchmarks'], 
-                          key=lambda x: x['results']['parallel'][-1]['mean']):
+                          key=lambda x: x['results'][-1]['mean']):
             name = bench['name']
-            time_val = bench['results']['parallel'][-1]['mean']
-            speedup = python_time / time_val
+            time_val = bench['results'][-1]['mean'] * 1000
+            speedup = python_time / bench['results'][-1]['mean']
             
-            if name == bench['name']:
-                marker = "🏆" if time_val == min(b['results']['parallel'][-1]['mean'] 
-                                                for b in self.results['benchmarks']) else ""
-                print(f"{name:<15} {speedup:>8.2f}x {marker}")
+            marker = "🏆 " if time_val == min(b['results'][-1]['mean'] * 1000
+                                              for b in self.results['benchmarks']) else ""
+            
+            print(f"{marker}{name:<15} {time_val:>13.3f}   {speedup:>8.2f}x")
+        
+        print("\n" + "=" * 70)
 
 
 def main():
-    # Configuration
-    n_values = [100, 500, 1000, 5000, 10000, 50000]
+    n_values = [500, 1000, 5000, 10000, 20000]
     n_trials = 5
     
-    # Create benchmark suite
     suite = BenchmarkSuite()
-    
-    # Load implementations
     suite.load_implementations()
     
     if len(suite.implementations) < 2:
         print("Error: Need at least 2 implementations to benchmark")
         sys.exit(1)
     
-    # Verify correctness
     suite.verify_correctness(n=100)
-    
-    # Run benchmarks
     suite.run_benchmarks(n_values, n_trials)
-    
-    # Save results
-    suite.save_results()
-    
-    # Print summary
     suite.print_summary()
     
-    print("\n" + "=" * 70)
-    print("BENCHMARK COMPLETE")
+    print("\nBENCHMARK COMPLETE")
     print("=" * 70)
 
 
