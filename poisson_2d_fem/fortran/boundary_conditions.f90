@@ -1,4 +1,5 @@
 module boundary_conditions
+    !f2py skip ::  ! Don't wrap this module
     use mesh_types
     implicit none
     

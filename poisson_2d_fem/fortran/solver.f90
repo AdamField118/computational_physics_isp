@@ -1,4 +1,5 @@
 module linear_solver
+    !f2py skip ::  ! Don't wrap this module
     use mesh_types, only: dp
     implicit none
     

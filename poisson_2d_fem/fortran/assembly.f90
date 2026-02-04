@@ -1,4 +1,5 @@
 module fem_assembly
+    !f2py skip ::  ! Don't wrap this module
     use mesh_types
     use reference_element
     implicit none
@@ -6,13 +7,13 @@ module fem_assembly
 contains
     
     !======================================================================
-    ! Compute affine transformation F_K: ref → physical element K
-    ! F_K(xi_hat) = B_K * xi_hat + b_K
+    ! Compute affine transformation F_K: ref -> physical element K
+    ! F_K(xi_hat) = B_K * xi_hat + b_vec
     !======================================================================
-    subroutine compute_affine_map(mesh, elem_id, B_K, b_K, det_B)
+    subroutine compute_affine_map(mesh, elem_id, B_K, b_vec, det_B)
         type(mesh_t), intent(in) :: mesh
         integer, intent(in) :: elem_id
-        real(dp), intent(out) :: B_K(2, 2), b_K(2), det_B
+        real(dp), intent(out) :: B_K(2, 2), b_vec(2), det_B
         
         integer :: v1, v2, v3
         real(dp) :: x1(2), x2(2), x3(2)
@@ -30,7 +31,7 @@ contains
         B_K(:, 1) = x2 - x1
         B_K(:, 2) = x3 - x1
         
-        b_K = x1
+        b_vec = x1
         
         ! Jacobian determinant = |det(B_K)| = 2 * Area(K)
         det_B = B_K(1,1)*B_K(2,2) - B_K(1,2)*B_K(2,1)
@@ -38,14 +39,14 @@ contains
     
     !======================================================================
     ! Assemble global stiffness matrix (sparse format)
-    ! K(i,j) = sum_K int_K grad_phi_i · grad_phi_j dx
+    ! K(i,j) = sum_K int_K grad_phi_i \cdot grad_phi_j dx
     !======================================================================
     subroutine assemble_stiffness(mesh, K_global)
         type(mesh_t), intent(in) :: mesh
         real(dp), intent(out) :: K_global(mesh%n_nodes, mesh%n_nodes)
         
         integer :: elem, i, j, loc_i, loc_j, glob_i, glob_j
-        real(dp) :: B_K(2, 2), b_K(2), det_B, B_inv_T(2, 2)
+        real(dp) :: B_K(2, 2), b_vec(2), det_B, B_inv_T(2, 2)
         real(dp) :: K_ref(3, 3), K_elem(3, 3)
         real(dp) :: grad_i_ref(2), grad_j_ref(2)
         real(dp) :: grad_i_phys(2), grad_j_phys(2)
@@ -60,8 +61,8 @@ contains
         ! Loop over elements
         do elem = 1, mesh%n_elements
             
-            ! Affine map: ref → physical
-            call compute_affine_map(mesh, elem, B_K, b_K, det_B)
+            ! Affine map: ref -> physical
+            call compute_affine_map(mesh, elem, B_K, b_vec, det_B)
             
             ! B_inv_T = (B_K^{-1})^T (for gradient transformation)
             call invert_2x2(B_K, B_inv_T)
@@ -80,7 +81,7 @@ contains
                     grad_i_phys = matmul(B_inv_T, grad_i_ref)
                     grad_j_phys = matmul(B_inv_T, grad_j_ref)
                     
-                    ! K_elem = |det_B| * grad_i · grad_j
+                    ! K_elem = |det_B| * grad_i \cdot grad_j
                     K_elem(loc_i, loc_j) = abs(det_B) * dot_product(grad_i_phys, grad_j_phys)
                 end do
             end do
@@ -114,7 +115,7 @@ contains
         end interface
         
         integer :: elem, loc_i, glob_i, q
-        real(dp) :: B_K(2, 2), b_K(2), det_B
+        real(dp) :: B_K(2, 2), b_vec(2), det_B
         real(dp) :: xi_q, eta_q, w_q, f_val, phi_val
         real(dp) :: x_q, y_q, xi_hat(2), x_phys(2)
         real(dp), allocatable :: xi(:), eta(:), weights(:)
@@ -129,7 +130,7 @@ contains
         ! Loop over elements
         do elem = 1, mesh%n_elements
             
-            call compute_affine_map(mesh, elem, B_K, b_K, det_B)
+            call compute_affine_map(mesh, elem, B_K, b_vec, det_B)
             
             ! Numerical integration over reference element
             do q = 1, n_quad
@@ -139,7 +140,7 @@ contains
                 
                 ! Map quadrature point to physical element
                 xi_hat = [xi_q, eta_q]
-                x_phys = matmul(B_K, xi_hat) + b_K
+                x_phys = matmul(B_K, xi_hat) + b_vec
                 x_q = x_phys(1)
                 y_q = x_phys(2)
                 

@@ -1,11 +1,12 @@
 module mesh_types
+    !f2py skip ::  ! Don't wrap this module
     implicit none
     integer, parameter :: dp = selected_real_kind(15, 307)
     
     type :: mesh_t
-        integer :: n_nodes              ! Number of nodes
-        integer :: n_elements           ! Number of triangles
-        integer :: n_boundary           ! Number of boundary nodes
+        integer :: n_nodes                       ! Number of nodes
+        integer :: n_elements                    ! Number of triangles
+        integer :: n_boundary                    ! Number of boundary nodes
         real(dp), allocatable :: nodes(:,:)      ! (n_nodes, 2) - coordinates
         integer, allocatable :: elements(:,:)    ! (n_elements, 3) - connectivity
         integer, allocatable :: boundary(:)      ! (n_boundary) - boundary node IDs

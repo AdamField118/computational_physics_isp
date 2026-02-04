@@ -1,4 +1,5 @@
 module reference_element
+    !f2py skip ::  ! Don't wrap this module
     use mesh_types, only: dp
     implicit none
     
@@ -43,7 +44,7 @@ contains
     
     !======================================================================
     ! Reference stiffness matrix (constant for all P1 triangles)
-    ! K_ref(i,j) = int_ref grad_phi_i · grad_phi_j dA
+    ! K_ref(i,j) = int_ref grad_phi_i \cdot grad_phi_j dA
     !======================================================================
     subroutine compute_reference_stiffness(K_ref)
         real(dp), intent(out) :: K_ref(3, 3)
@@ -67,8 +68,8 @@ contains
     
     !======================================================================
     ! Gauss quadrature on reference triangle
-    ! 1-point: centroid, weight = 1/2 (exact for degree ≤ 1)
-    ! 3-point: degree ≤ 2 (needed for f(x,y) non-constant)
+    ! 1-point: centroid, weight = 1/2 (exact for degree <= 1)
+    ! 3-point: degree <= 2 (needed for f(x,y) non-constant)
     !======================================================================
     subroutine gauss_points_triangle(order, xi, eta, weights, n_quad)
         integer, intent(in) :: order
