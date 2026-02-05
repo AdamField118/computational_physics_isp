@@ -51,7 +51,7 @@ $$\|u - u_h\|_{H^1(\Omega)} \leq Ch \|u\|_{H^2(\Omega)}$$
 
 ## Interactive Convergence Results
 
-[codeContainer](./poisson_2d_fem/web/scripts/poisson_convergence_viz.js)
+[codeContainer](/poisson_2d_fem/web/scripts/poisson_convergence_viz.js)
 
 ## Verification Strategy
 
