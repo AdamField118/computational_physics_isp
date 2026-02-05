@@ -368,7 +368,8 @@ const markdownFiles = [
     "./textbook_notes/chapter_0/sobolev_fem_foundations.md",
     "./textbook_notes/chapter_3/exercises.md",
     "./textbook_notes/chapter_4/chapter_4_notes.md",
-    "./textbook_notes/chapter_4/chapter_4_exercises.md"
+    "./textbook_notes/chapter_4/chapter_4_exercises.md",
+    "./poisson_2d_fem/web/index.md"
 ];
 
 function parseFrontMatter(content) {
