@@ -104,8 +104,8 @@ def plot_convergence_rates(h, L2, H1, Linf):
     ax.grid(True, alpha=0.3, which='both')
     
     plt.tight_layout()
-    plt.savefig('../docs/results/convergence.png', dpi=300, facecolor='#1a1a1a', bbox_inches='tight')
-    print("\nPlot saved to: ../docs/results/convergence.png")
+    plt.savefig('../results/convergence.png', dpi=300, facecolor='#1a1a1a', bbox_inches='tight')
+    print("\nPlot saved to: ../results/convergence.png")
     plt.show()
 
 
