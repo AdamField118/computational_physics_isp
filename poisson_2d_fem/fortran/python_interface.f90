@@ -44,7 +44,7 @@ contains
         ! Assemble and solve
         allocate(K(n_nodes, n_nodes), F(n_nodes))
         call assemble_stiffness(mesh, K)
-        call assemble_load(mesh, default_source, F)  ! Fixed: added f_func
+        call assemble_load(mesh, default_source, F)
         call apply_dirichlet_zero(mesh, K, F)
         call solve_system(K, F, u_solution)
         
