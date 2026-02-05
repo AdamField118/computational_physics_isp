@@ -60,3 +60,5 @@ clean:
 
 test:
 	cd $(PYTHON_DIR) && python convergence_study.py
+
+build+test: build test
