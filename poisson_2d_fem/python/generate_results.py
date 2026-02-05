@@ -63,7 +63,7 @@ def main():
     plot_convergence_results(h_vals, L2_errors, H1_errors, Linf_errors)
     plot_solution_example(mms)
     
-    print("\nPlots saved to ../docs/results/")
+    print("\nPlots saved to ../results/")
     print("  - convergence_rates.png")
     print("  - solution_example.png")
     print("  - error_distribution.png")
@@ -103,7 +103,7 @@ def plot_convergence_results(h, L2, H1, Linf):
     ax.tick_params(labelsize=12)
     
     plt.tight_layout()
-    plt.savefig('../docs/results/convergence_rates.png', dpi=300, 
+    plt.savefig('../results/convergence_rates.png', dpi=300, 
                 facecolor='#1a1a1a', bbox_inches='tight')
     plt.close()
 
@@ -116,13 +116,13 @@ def plot_solution_example(mms):
     
     from visualization import plot_error_distribution
     plot_error_distribution(solver.mesh, solver.solution, mms.u_exact,
-                           save_path='../docs/results/error_distribution.png')
+                           save_path='../results/error_distribution.png')
     
     # Also 3D plot
     from visualization import plot_3d_solution
     plot_3d_solution(solver.mesh, solver.solution, 
                     title='Numerical Solution: u(x,y) = sin(πx)sin(πy)',
-                    save_path='../docs/results/solution_3d.png')
+                    save_path='../results/solution_3d.png')
 
 
 if __name__ == '__main__':
