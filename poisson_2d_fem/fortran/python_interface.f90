@@ -7,14 +7,14 @@ module python_interface
 
 contains
 
-    ! Default source function f(x,y) = -2*pi^2*sin(pi*x)*sin(pi*y)
+    ! Default source function f(x,y) = 2*pi^2*sin(pi*x)*sin(pi*y)
     ! This gives exact solution u(x,y) = sin(pi*x)*sin(pi*y)
     function default_source(x, y) result(val)
         real(dp), intent(in) :: x, y
         real(dp) :: val
         real(dp), parameter :: pi = 3.141592653589793_dp
         
-        val = -2.0_dp * pi**2 * sin(pi*x) * sin(pi*y)
+        val = 2.0_dp * pi**2 * sin(pi*x) * sin(pi*y)
     end function default_source
 
     subroutine solve_poisson_2d(nodes, elements, boundary, n_nodes, n_elements, n_boundary, u_solution)

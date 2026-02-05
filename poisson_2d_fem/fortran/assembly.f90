@@ -71,7 +71,7 @@ contains
             ! Metric tensor: G_K = B_K^{-1} * (B_K^{-1})^T
             G_K = matmul(B_inv_T, transpose(B_inv_T))
             
-            ! Local stiffness: K_elem(i,j) = |det_B| * grad_i^T * G_K * grad_j
+            ! Local stiffness: K_elem(i,j) = |det_B| /2 * grad_i^T * G_K * grad_j
             do loc_i = 1, 3
                 grad_i_ref = grad_phi_ref(loc_i)
                 do loc_j = 1, 3
@@ -81,8 +81,8 @@ contains
                     grad_i_phys = matmul(B_inv_T, grad_i_ref)
                     grad_j_phys = matmul(B_inv_T, grad_j_ref)
                     
-                    ! K_elem = |det_B| * grad_i \cdot grad_j
-                    K_elem(loc_i, loc_j) = abs(det_B) * dot_product(grad_i_phys, grad_j_phys)
+                    ! K_elem = |det_B| / 2 * grad_i \cdot grad_j
+                    K_elem(loc_i, loc_j) = abs(det_B) / 2.0_dp * dot_product(grad_i_phys, grad_j_phys)
                 end do
             end do
             
