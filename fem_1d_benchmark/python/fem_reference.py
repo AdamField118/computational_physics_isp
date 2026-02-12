@@ -1,5 +1,5 @@
 """
-1D Finite Element Method - Python Reference Implementation (Optimized)
+1D Finite Element Method - Python Reference Implementation
 Based on Chapter 0, Section 0.4 of Brenner & Scott
 """
 
