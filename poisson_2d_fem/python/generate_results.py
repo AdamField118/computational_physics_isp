@@ -1,6 +1,6 @@
 """
 Clean convergence verification for documentation
-Generates publication-quality plots
+Generates high-quality plots
 """
 import numpy as np
 import matplotlib.pyplot as plt
