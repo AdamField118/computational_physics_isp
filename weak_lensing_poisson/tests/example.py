@@ -32,13 +32,13 @@ def simple_cluster_example():
     print("=" * 70)
     
     # Step 1: Create mesh
-    print(" nStep 1: Creating mesh...")
+    print("\nStep 1: Creating mesh...")
     nx, ny = 50, 50
     mesh = generate_structured_mesh(nx, ny, xmin=-2.0, xmax=2.0, ymin=-2.0, ymax=2.0)
     print(f"  Created {nx}×{ny} mesh: {mesh.n_nodes} nodes, {mesh.n_elements} elements")
     
     # Step 2: Define mass distribution (convergence)
-    print(" nStep 2: Defining mass distribution...")
+    print("\nStep 2: Defining mass distribution...")
     lens = GaussianLens(amplitude=1.5, sigma=0.4)
     
     # Evaluate convergence at mesh nodes
@@ -47,11 +47,11 @@ def simple_cluster_example():
     print(f"  Total mass ( int kappa): {jnp.sum(kappa) * 16.0 / mesh.n_nodes:.4f}")  # Approximate integral
     
     # Step 3: Solve FEM system
-    print(" nStep 3: Solving lensing Poisson equation...")
+    print("\nStep 3: Solving lensing Poisson equation...")
     solution = solve_lensing_poisson(mesh, kappa, tol=1e-6, maxiter=1000, verbose=True)
     
     # Step 4: Analyze results
-    print(" nStep 4: Solution analysis...")
+    print("\nStep 4: Solution analysis...")
     print(f"  Max | psi|: {jnp.max(jnp.abs(solution.psi)):.6f}")
     
     alpha_mag = jnp.sqrt(jnp.sum(solution.alpha**2, axis=1))
@@ -59,10 +59,10 @@ def simple_cluster_example():
     print(f"  Mean | alpha|: {jnp.mean(alpha_mag):.6f}")
     
     # Step 5: Visualize
-    print(" nStep 5: Creating visualizations...")
+    print("\nStep 5: Creating visualizations...")
     plot_results(mesh, solution)
     
-    print(" n" + "=" * 70)
+    print("\n" + "=" * 70)
     print("Example complete! Check 'cluster_example.png' for visualization.")
     print("=" * 70)
     
@@ -175,7 +175,7 @@ def multi_cluster_example():
     """
     More complex: Multiple galaxy clusters
     """
-    print(" n" + "=" * 70)
+    print("\n" + "=" * 70)
     print("EXAMPLE: Multiple Clusters")
     print("=" * 70)
     
@@ -212,7 +212,7 @@ def multi_cluster_example():
     
     # Plot
     plot_results(mesh, solution)
-    print(" nMulti-cluster visualization saved to 'cluster_example.png'")
+    print("\nMulti-cluster visualization saved to 'cluster_example.png'")
     
     return mesh, solution
 
