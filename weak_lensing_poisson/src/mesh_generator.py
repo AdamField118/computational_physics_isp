@@ -7,8 +7,6 @@ Supports:
 - Survey footprint geometries
 - Masking for structured grids
 
-Author: Adam Field
-Date: February 2026
 """
 
 import jax.numpy as jnp
@@ -98,7 +96,7 @@ def generate_masked_structured_mesh(nx: int, ny: int,
     Generate structured mesh with masked regions
     
     GPU-friendly approach: keep regular grid structure, mark masked nodes
-    as boundary (enforces ψ = 0 there)
+    as boundary (enforces \psi = 0 there)
     
     Args:
         nx, ny: Grid resolution
