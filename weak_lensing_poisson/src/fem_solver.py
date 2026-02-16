@@ -136,8 +136,8 @@ def compute_element_load(coords: jnp.ndarray, kappa_vals: jnp.ndarray) -> jnp.nd
         area / 12.0
     )
     
-    # F^e = 2 * M * κ
-    F_elem = 2.0 * jnp.dot(M_elem, kappa_vals)
+    # F^e = -2 * M * κ
+    F_elem = -2.0 * jnp.dot(M_elem, kappa_vals)
     
     return F_elem
 
