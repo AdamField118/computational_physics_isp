@@ -14,7 +14,7 @@ Date: February 2026
 import jax.numpy as jnp
 import numpy as np
 from typing import Tuple, Optional
-from fem_solver import Mesh
+from .fem_solver import Mesh
 
 try:
     import triangle as tr

@@ -1,4 +1,4 @@
-name: nbody
+name: comphys
 channels:
   - conda-forge
   - https://repo.anaconda.com/pkgs/main

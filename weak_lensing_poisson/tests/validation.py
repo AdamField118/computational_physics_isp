@@ -7,16 +7,23 @@ Tests against analytic solutions:
 - SIS lens
 """
 
+import sys
+from pathlib import Path
+
 import jax.numpy as jnp
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Tuple
 
-from fem_solver import (
+# Add parent directory to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+from src.fem_solver import (
     solve_lensing_poisson, compute_errors,
     GaussianLens, PointMassLens, SISLens
 )
-from mesh_generator import generate_structured_mesh
+from src.mesh_generator import generate_structured_mesh
 
 
 def convergence_study_gaussian(mesh_sizes: List[int] = [10, 20, 40, 80],
@@ -47,13 +54,13 @@ def convergence_study_gaussian(mesh_sizes: List[int] = [10, 20, 40, 80],
         'Linf_error': []
     }
     
-    print(f"\n{'h':>10} {'Nodes':>8} {'L^2 Error':>12} {'Rate':>8} {'L\infty Error':>12}")
+    print(f"\n{'h':>10} {'Nodes':>8} {'L^2 Error':>12} {'Rate':>8} {'Linf Error':>12}")
     print("-" * 70)
     
     for i, nx in enumerate(mesh_sizes):
         # Generate mesh
-        mesh = generate_structured_mesh(nx, nx)
-        h = 1.0 / nx
+        mesh = generate_structured_mesh(nx, nx, xmin=-1.0, xmax=1.0, ymin=-1.0, ymax=1.0)
+        h = 2.0 / nx
         
         # Create convergence field at nodes
         kappa = jnp.array([lens.kappa(x, y) for x, y in mesh.nodes])
@@ -105,7 +112,7 @@ def plot_convergence_rates(results: dict,
     # Plot errors
     ax.loglog(h, L2, 'o-', label='L^2 error', linewidth=2.5, markersize=9,
               color='#00ff41', markeredgecolor='white', markeredgewidth=0.5)
-    ax.loglog(h, Linf, 's-', label='L\infty error', linewidth=2.5, markersize=9,
+    ax.loglog(h, Linf, 's-', label='Linf error', linewidth=2.5, markersize=9,
               color='#00aaff', markeredgecolor='white', markeredgewidth=0.5)
     
     # Reference slopes
@@ -140,7 +147,7 @@ def test_gaussian_lens(nx: int = 40):
     
     # Setup
     lens = GaussianLens(amplitude=2.0, sigma=0.15)
-    mesh = generate_structured_mesh(nx, nx)
+    mesh = generate_structured_mesh(40, 40, xmin=-1.0, xmax=1.0, ymin=-1.0, ymax=1.0)
     
     # Convergence field
     kappa = jnp.array([lens.kappa(x, y) for x, y in mesh.nodes])
@@ -153,7 +160,7 @@ def test_gaussian_lens(nx: int = 40):
     
     print(f"\nErrors vs. analytic solution:")
     print(f"  L^2 error:  {errors['L2']:.6e}")
-    print(f"  L\infty error:  {errors['Linf']:.6e}")
+    print(f"  Linf error:  {errors['Linf']:.6e}")
     
     # Visualize
     visualize_solution(mesh, solution, lens, save_prefix='gaussian')
@@ -170,7 +177,7 @@ def test_point_mass_lens(nx: int = 40):
     print("=" * 70)
     
     lens = PointMassLens(theta_E=0.5)
-    mesh = generate_structured_mesh(nx, nx, xmin=-1.0, xmax=1.0, ymin=-1.0, ymax=1.0)
+    mesh = generate_structured_mesh(40, 40, xmin=-1.0, xmax=1.0, ymin=-1.0, ymax=1.0)
     
     # Convergence (regularized)
     kappa = jnp.array([lens.kappa(x, y) for x, y in mesh.nodes])
@@ -200,33 +207,33 @@ def visualize_solution(mesh, solution, lens=None, save_prefix='solution'):
         np.array(mesh.elements)
     )
     
-    # 1. Convergence \kappa
+    # 1. Convergence kappa
     ax = axes[0, 0]
     tcf = ax.tricontourf(triang, np.array(solution.convergence), levels=20, cmap='hot')
-    ax.set_title('Convergence \kappa', fontsize=14, color='#00ff41')
+    ax.set_title('Convergence kappa', fontsize=14, color='#00ff41')
     ax.set_xlabel('x', fontsize=12)
     ax.set_ylabel('y', fontsize=12)
     ax.set_aspect('equal')
-    plt.colorbar(tcf, ax=ax, label='\kappa')
+    plt.colorbar(tcf, ax=ax, label='kappa')
     
-    # 2. Lensing potential \psi
+    # 2. Lensing potential psi
     ax = axes[0, 1]
     tcf = ax.tricontourf(triang, np.array(solution.psi), levels=20, cmap='viridis')
-    ax.set_title('Lensing Potential \psi', fontsize=14, color='#00ff41')
+    ax.set_title('Lensing Potential psi', fontsize=14, color='#00ff41')
     ax.set_xlabel('x', fontsize=12)
     ax.set_ylabel('y', fontsize=12)
     ax.set_aspect('equal')
-    plt.colorbar(tcf, ax=ax, label='\psi')
+    plt.colorbar(tcf, ax=ax, label='psi')
     
-    # 3. Deflection magnitude |\alpha|
+    # 3. Deflection magnitude |alpha|
     ax = axes[1, 0]
     alpha_mag = np.sqrt(np.sum(np.array(solution.alpha)**2, axis=1))
     tcf = ax.tricontourf(triang, alpha_mag, levels=20, cmap='plasma')
-    ax.set_title('Deflection Magnitude |\alpha|', fontsize=14, color='#00ff41')
+    ax.set_title('Deflection Magnitude |alpha|', fontsize=14, color='#00ff41')
     ax.set_xlabel('x', fontsize=12)
     ax.set_ylabel('y', fontsize=12)
     ax.set_aspect('equal')
-    plt.colorbar(tcf, ax=ax, label='|\alpha|')
+    plt.colorbar(tcf, ax=ax, label='|alpha|')
     
     # 4. Deflection field (quiver)
     ax = axes[1, 1]
@@ -245,7 +252,7 @@ def visualize_solution(mesh, solution, lens=None, save_prefix='solution'):
         scale=5.0,
         width=0.003
     )
-    ax.set_title('Deflection Field \alpha', fontsize=14, color='#00ff41')
+    ax.set_title('Deflection Field alpha', fontsize=14, color='#00ff41')
     ax.set_xlabel('x', fontsize=12)
     ax.set_ylabel('y', fontsize=12)
     ax.set_aspect('equal')
@@ -274,7 +281,7 @@ def benchmark_solver_performance():
     print("-" * 70)
     
     for nx in mesh_sizes:
-        mesh = generate_structured_mesh(nx, nx)
+        mesh = generate_structured_mesh(nx, nx, xmin=-1.0, xmax=1.0, ymin=-1.0, ymax=1.0)
         kappa = jnp.array([lens.kappa(x, y) for x, y in mesh.nodes])
         
         # Warm-up (JIT compilation)
