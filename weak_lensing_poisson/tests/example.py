@@ -3,17 +3,24 @@ Simple example: Solving weak lensing Poisson equation with JAX FEM
 
 This demonstrates the basic workflow:
 1. Create a mesh
-2. Define convergence field \kappa
-3. Solve \nabla^2\psi = 2\kappa
-4. Extract deflection \alpha and visualize
+2. Define convergence field  kappa
+3. Solve  nabla^2 psi = 2 kappa
+4. Extract deflection  alpha and visualize
 """
+
+import sys
+from pathlib import Path
 
 import jax.numpy as jnp
 import numpy as np
 import matplotlib.pyplot as plt
 
-from fem_solver import solve_lensing_poisson, GaussianLens
-from mesh_generator import generate_structured_mesh
+# Add parent directory to path so we can import from src
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+from src.fem_solver import solve_lensing_poisson, GaussianLens
+from src.mesh_generator import generate_structured_mesh
 
 
 def simple_cluster_example():
@@ -25,37 +32,37 @@ def simple_cluster_example():
     print("=" * 70)
     
     # Step 1: Create mesh
-    print("\nStep 1: Creating mesh...")
+    print(" nStep 1: Creating mesh...")
     nx, ny = 50, 50
     mesh = generate_structured_mesh(nx, ny, xmin=-2.0, xmax=2.0, ymin=-2.0, ymax=2.0)
     print(f"  Created {nx}×{ny} mesh: {mesh.n_nodes} nodes, {mesh.n_elements} elements")
     
     # Step 2: Define mass distribution (convergence)
-    print("\nStep 2: Defining mass distribution...")
+    print(" nStep 2: Defining mass distribution...")
     lens = GaussianLens(amplitude=1.5, sigma=0.4)
     
     # Evaluate convergence at mesh nodes
     kappa = jnp.array([lens.kappa(x, y) for x, y in mesh.nodes])
-    print(f"  Max \kappa: {jnp.max(kappa):.4f}")
-    print(f"  Total mass (\int\kappa): {jnp.sum(kappa) * 16.0 / mesh.n_nodes:.4f}")  # Approximate integral
+    print(f"  Max  kappa: {jnp.max(kappa):.4f}")
+    print(f"  Total mass ( int kappa): {jnp.sum(kappa) * 16.0 / mesh.n_nodes:.4f}")  # Approximate integral
     
     # Step 3: Solve FEM system
-    print("\nStep 3: Solving lensing Poisson equation...")
+    print(" nStep 3: Solving lensing Poisson equation...")
     solution = solve_lensing_poisson(mesh, kappa, tol=1e-6, maxiter=1000, verbose=True)
     
     # Step 4: Analyze results
-    print("\nStep 4: Solution analysis...")
-    print(f"  Max |\psi|: {jnp.max(jnp.abs(solution.psi)):.6f}")
+    print(" nStep 4: Solution analysis...")
+    print(f"  Max | psi|: {jnp.max(jnp.abs(solution.psi)):.6f}")
     
     alpha_mag = jnp.sqrt(jnp.sum(solution.alpha**2, axis=1))
-    print(f"  Max |\alpha|: {jnp.max(alpha_mag):.6f}")
-    print(f"  Mean |\alpha|: {jnp.mean(alpha_mag):.6f}")
+    print(f"  Max | alpha|: {jnp.max(alpha_mag):.6f}")
+    print(f"  Mean | alpha|: {jnp.mean(alpha_mag):.6f}")
     
     # Step 5: Visualize
-    print("\nStep 5: Creating visualizations...")
+    print(" nStep 5: Creating visualizations...")
     plot_results(mesh, solution)
     
-    print("\n" + "=" * 70)
+    print(" n" + "=" * 70)
     print("Example complete! Check 'cluster_example.png' for visualization.")
     print("=" * 70)
     
@@ -78,47 +85,47 @@ def plot_results(mesh, solution):
         np.array(mesh.elements)
     )
     
-    # 1. Convergence \kappa (mass distribution)
+    # 1. Convergence  kappa (mass distribution)
     ax1 = plt.subplot(2, 2, 1)
     kappa_plot = np.array(solution.convergence)
     levels = np.linspace(0, kappa_plot.max(), 20)
     tcf = ax1.tricontourf(triang, kappa_plot, levels=levels, cmap='hot')
     ax1.triplot(triang, 'w-', alpha=0.05, linewidth=0.2)
-    ax1.set_title('Convergence \kappa (Mass Distribution)', 
+    ax1.set_title('Convergence  kappa (Mass Distribution)', 
                   fontsize=16, color='#00ff41', fontweight='bold', pad=15)
     ax1.set_xlabel('x [θ]', fontsize=13)
     ax1.set_ylabel('y [θ]', fontsize=13)
     ax1.set_aspect('equal')
     cbar = plt.colorbar(tcf, ax=ax1, fraction=0.046, pad=0.04)
-    cbar.set_label('\kappa', fontsize=13, rotation=0, labelpad=15)
+    cbar.set_label(' kappa', fontsize=13, rotation=0, labelpad=15)
     
-    # 2. Lensing potential \psi
+    # 2. Lensing potential  psi
     ax2 = plt.subplot(2, 2, 2)
     psi_plot = np.array(solution.psi)
     levels = np.linspace(psi_plot.min(), psi_plot.max(), 20)
     tcf = ax2.tricontourf(triang, psi_plot, levels=levels, cmap='viridis')
     ax2.triplot(triang, 'w-', alpha=0.05, linewidth=0.2)
-    ax2.set_title('Lensing Potential \psi', 
+    ax2.set_title('Lensing Potential  psi', 
                   fontsize=16, color='#00ff41', fontweight='bold', pad=15)
     ax2.set_xlabel('x [θ]', fontsize=13)
     ax2.set_ylabel('y [θ]', fontsize=13)
     ax2.set_aspect('equal')
     cbar = plt.colorbar(tcf, ax=ax2, fraction=0.046, pad=0.04)
-    cbar.set_label('\psi', fontsize=13, rotation=0, labelpad=15)
+    cbar.set_label(' psi', fontsize=13, rotation=0, labelpad=15)
     
-    # 3. Deflection magnitude |\alpha|
+    # 3. Deflection magnitude | alpha|
     ax3 = plt.subplot(2, 2, 3)
     alpha_mag = np.sqrt(np.sum(np.array(solution.alpha)**2, axis=1))
     levels = np.linspace(0, alpha_mag.max(), 20)
     tcf = ax3.tricontourf(triang, alpha_mag, levels=levels, cmap='plasma')
     ax3.triplot(triang, 'w-', alpha=0.05, linewidth=0.2)
-    ax3.set_title('Deflection Magnitude |\alpha|', 
+    ax3.set_title('Deflection Magnitude | alpha|', 
                   fontsize=16, color='#00ff41', fontweight='bold', pad=15)
     ax3.set_xlabel('x [θ]', fontsize=13)
     ax3.set_ylabel('y [θ]', fontsize=13)
     ax3.set_aspect('equal')
     cbar = plt.colorbar(tcf, ax=ax3, fraction=0.046, pad=0.04)
-    cbar.set_label('|\alpha| [θ]', fontsize=13, rotation=0, labelpad=20)
+    cbar.set_label('| alpha| [θ]', fontsize=13, rotation=0, labelpad=20)
     
     # 4. Deflection field (quiver plot)
     ax4 = plt.subplot(2, 2, 4)
@@ -147,13 +154,13 @@ def plot_results(mesh, solution):
         alpha=0.8
     )
     
-    ax4.set_title('Deflection Field \alpha = \nabla\psi', 
+    ax4.set_title('Deflection Field  alpha =  nabla psi', 
                   fontsize=16, color='#00ff41', fontweight='bold', pad=15)
     ax4.set_xlabel('x [θ]', fontsize=13)
     ax4.set_ylabel('y [θ]', fontsize=13)
     ax4.set_aspect('equal')
     cbar = plt.colorbar(Q, ax=ax4, fraction=0.046, pad=0.04)
-    cbar.set_label('|\alpha| [θ]', fontsize=13, rotation=0, labelpad=20)
+    cbar.set_label('| alpha| [θ]', fontsize=13, rotation=0, labelpad=20)
     
     # Overall title
     fig.suptitle('JAX FEM Weak Lensing: Galaxy Cluster Example',
@@ -168,7 +175,7 @@ def multi_cluster_example():
     """
     More complex: Multiple galaxy clusters
     """
-    print("\n" + "=" * 70)
+    print(" n" + "=" * 70)
     print("EXAMPLE: Multiple Clusters")
     print("=" * 70)
     
@@ -198,14 +205,14 @@ def multi_cluster_example():
     
     print(f"Created {len(clusters)} clusters")
     print(f"Total mesh: {mesh.n_nodes} nodes, {mesh.n_elements} elements")
-    print(f"Max \kappa: {jnp.max(kappa):.4f}")
+    print(f"Max  kappa: {jnp.max(kappa):.4f}")
     
     # Solve
     solution = solve_lensing_poisson(mesh, kappa, verbose=True)
     
     # Plot
     plot_results(mesh, solution)
-    print("\nMulti-cluster visualization saved to 'cluster_example.png'")
+    print(" nMulti-cluster visualization saved to 'cluster_example.png'")
     
     return mesh, solution
 
