@@ -34,6 +34,8 @@ __all__ = [
     "GaussianLens",
     "PointMassLens",
     "SISLens",
+    "SinusoidalLens",
+    "PolynomialLens",
     
     # Mesh generation
     "generate_structured_mesh",
