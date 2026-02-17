@@ -1,7 +1,7 @@
 """
 JAX-based FEM for Weak Gravitational Lensing
 
-Solves the lensing Poisson equation
+Solves the lensing Poisson equation using P1 finite elements
 """
 
 from .fem_solver import (
@@ -12,6 +12,8 @@ from .fem_solver import (
     GaussianLens,
     PointMassLens,
     SISLens,
+    SinusoidalLens,
+    PolynomialLens,
 )
 
 from .mesh_generator import (
@@ -19,19 +21,6 @@ from .mesh_generator import (
     generate_masked_structured_mesh,
     generate_unstructured_mesh,
     refine_mesh_uniform,
-)
-
-from .shear_computation import (
-    compute_shear_p2,
-    ShearField,
-)
-
-from .autodiff_integration import (
-    forward_model_potential,
-    forward_model_shear,
-    compute_gradient_loss,
-    compute_value_and_gradient,
-    validate_gradients,
 )
 
 __version__ = "0.1.0"
@@ -55,15 +44,4 @@ __all__ = [
     "generate_masked_structured_mesh",
     "generate_unstructured_mesh",
     "refine_mesh_uniform",
-
-    # Shear computation
-    "compute_shear_p2",
-    "ShearField",
-    
-    # Autodiff
-    "forward_model_potential",
-    "forward_model_shear",
-    "compute_gradient_loss",
-    "compute_value_and_gradient",
-    "validate_gradients",
 ]
