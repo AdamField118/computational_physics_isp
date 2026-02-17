@@ -1,14 +1,15 @@
 """
 Automatic Differentiation Integration for Weak Lensing FEM
 
-Makes the entire solver differentiable: κ → ψ → γ
-Enables inverse problems via gradient-based optimization.
+Current Status: P1 Elements Only
+- ✅ Differentiable forward model: κ → ψ
+- ⏳ Shear computation: Awaiting P3 implementation
+- ⏳ Inverse problems: Awaiting P3 shear gradients
 
-Key Features:
-- Fully differentiable forward model
-- Gradient validation against finite differences
-- Performance profiling (forward vs backward pass)
-- Ready for Bayesian inference
+Future (P3):
+- Fully differentiable: κ → ψ → γ
+- Gradient-based mass reconstruction
+- Bayesian inference with UQ
 """
 
 import jax
@@ -17,23 +18,24 @@ from jax import jit, grad, value_and_grad
 from functools import partial
 from typing import Tuple, Callable, Dict
 import time
+import numpy as np
 
 
 # ============================================================================
-# Differentiable Forward Model
+# Differentiable Forward Model (P1 - Potential Only)
 # ============================================================================
 
 @jit
 def forward_model_potential(kappa: jnp.ndarray, mesh) -> jnp.ndarray:
     """
-    Differentiable forward model: κ → ψ
+    Differentiable forward model: κ → ψ (P1 elements)
     
     This is the MINIMAL differentiable version that returns only ψ.
     Use this when you need gradients w.r.t. κ.
     
     Args:
         kappa: (n_nodes,) convergence field
-        mesh: Mesh object (must be passed as static arg in practice)
+        mesh: Mesh object (P1 triangular elements)
         
     Returns:
         psi: (n_nodes,) lensing potential
@@ -52,71 +54,8 @@ def forward_model_potential(kappa: jnp.ndarray, mesh) -> jnp.ndarray:
     return psi
 
 
-@jit
-def forward_model_shear(kappa: jnp.ndarray, mesh, 
-                       eval_points: str = 'centroids') -> Tuple[jnp.ndarray, jnp.ndarray]:
-    """
-    Differentiable forward model: κ → ψ → (γ₁, γ₂)
-    
-    Returns shear field at specified evaluation points.
-    
-    Args:
-        kappa: (n_nodes,) convergence field
-        mesh: P2 Mesh object
-        eval_points: Where to evaluate shear
-        
-    Returns:
-        gamma1: (n_eval,) first shear component
-        gamma2: (n_eval,) second shear component
-    """
-    # Get potential
-    psi = forward_model_potential(kappa, mesh)
-    
-    # Compute shear
-    # NOTE: This requires shear_computation module
-    # For now, return a placeholder - you'll integrate properly
-    from .shear_computation import compute_shear_p2
-    
-    shear = compute_shear_p2(mesh, psi, eval_points=eval_points)
-    
-    return shear.gamma1, shear.gamma2
-
-
-@partial(jit, static_argnames=['loss_fn'])
-def differentiable_loss(kappa: jnp.ndarray, 
-                       gamma_obs: Tuple[jnp.ndarray, jnp.ndarray],
-                       mesh,
-                       loss_fn: Callable = None) -> float:
-    """
-    Differentiable loss function for inverse problem
-    
-    Computes ||γ_pred - γ_obs||² where γ_pred = forward_model(κ)
-    
-    Args:
-        kappa: (n_nodes,) convergence field (optimization variable)
-        gamma_obs: (gamma1_obs, gamma2_obs) observed shear
-        mesh: Mesh object
-        loss_fn: Custom loss function (default: MSE)
-        
-    Returns:
-        loss: Scalar loss value
-    """
-    # Predict shear
-    gamma1_pred, gamma2_pred = forward_model_shear(kappa, mesh)
-    
-    gamma1_obs, gamma2_obs = gamma_obs
-    
-    if loss_fn is None:
-        # Mean squared error
-        loss = jnp.mean((gamma1_pred - gamma1_obs)**2 + (gamma2_pred - gamma2_obs)**2)
-    else:
-        loss = loss_fn(gamma1_pred, gamma2_pred, gamma1_obs, gamma2_obs)
-    
-    return loss
-
-
 # ============================================================================
-# Gradient Computation
+# Gradient Computation (Potential Only)
 # ============================================================================
 
 def compute_gradient_potential(kappa: jnp.ndarray, mesh) -> jnp.ndarray:
@@ -127,7 +66,7 @@ def compute_gradient_potential(kappa: jnp.ndarray, mesh) -> jnp.ndarray:
     
     Args:
         kappa: (n_nodes,) convergence field
-        mesh: Mesh object
+        mesh: Mesh object (P1 elements)
         
     Returns:
         jacobian: (n_nodes, n_nodes) sensitivity matrix
@@ -141,110 +80,49 @@ def compute_gradient_potential(kappa: jnp.ndarray, mesh) -> jnp.ndarray:
     return jacobian
 
 
-def compute_gradient_loss(kappa: jnp.ndarray,
-                         gamma_obs: Tuple[jnp.ndarray, jnp.ndarray],
-                         mesh) -> jnp.ndarray:
+def compute_gradient_at_point(kappa: jnp.ndarray, mesh, 
+                              node_idx: int) -> jnp.ndarray:
     """
-    Compute ∂L/∂κ where L = ||γ_pred - γ_obs||²
+    Compute gradient of ψ at a single node w.r.t. all κ values
     
-    This is what you use for gradient descent in inverse problem!
+    More efficient than computing full Jacobian when you only need
+    one row: ∂ψ[node_idx]/∂κ
     
     Args:
-        kappa: (n_nodes,) current convergence estimate
-        gamma_obs: Observed shear field
+        kappa: (n_nodes,) convergence field
         mesh: Mesh object
+        node_idx: Index of node to compute gradient for
         
     Returns:
-        gradient: (n_nodes,) ∂L/∂κ
+        gradient: (n_nodes,) ∂ψ[node_idx]/∂κ
     """
-    grad_fn = jax.grad(differentiable_loss, argnums=0)
+    def psi_at_node(kappa):
+        psi = forward_model_potential(kappa, mesh)
+        return psi[node_idx]
     
-    gradient = grad_fn(kappa, gamma_obs, mesh)
+    grad_fn = jax.grad(psi_at_node)
+    gradient = grad_fn(kappa)
     
     return gradient
 
 
-def compute_value_and_gradient(kappa: jnp.ndarray,
-                               gamma_obs: Tuple[jnp.ndarray, jnp.ndarray],
-                               mesh) -> Tuple[float, jnp.ndarray]:
-    """
-    Efficiently compute both loss and gradient in one pass
-    
-    Uses JAX's value_and_grad for efficiency (shares forward pass)
-    
-    Returns:
-        loss: Scalar loss value
-        gradient: (n_nodes,) gradient
-    """
-    val_grad_fn = jax.value_and_grad(differentiable_loss, argnums=0)
-    
-    loss, gradient = val_grad_fn(kappa, gamma_obs, mesh)
-    
-    return loss, gradient
-
-
 # ============================================================================
-# Gradient Validation
+# Validation Functions
 # ============================================================================
 
-def finite_difference_gradient(kappa: jnp.ndarray,
-                               gamma_obs: Tuple[jnp.ndarray, jnp.ndarray],
-                               mesh,
-                               epsilon: float = 1e-5) -> jnp.ndarray:
+def validate_potential_gradients(kappa: jnp.ndarray, mesh,
+                                 n_samples: int = 5,
+                                 epsilon: float = 1e-5,
+                                 verbose: bool = True) -> Dict:
     """
-    Compute gradient using finite differences (for validation)
+    Validate autodiff gradients for potential against finite differences
     
-    ∂L/∂κ_i ≈ [L(κ + ε e_i) - L(κ)] / ε
-    
-    Args:
-        kappa: Current convergence field
-        gamma_obs: Observed shear
-        mesh: Mesh object
-        epsilon: Finite difference step size
-        
-    Returns:
-        gradient: (n_nodes,) approximate gradient
-    """
-    n = len(kappa)
-    gradient = jnp.zeros(n)
-    
-    # Base loss
-    L0 = differentiable_loss(kappa, gamma_obs, mesh)
-    
-    print(f"Computing finite difference gradient (n={n})...")
-    
-    # Perturb each component
-    for i in range(n):
-        if i % 100 == 0:
-            print(f"  {i}/{n}...", end='\r')
-        
-        # Forward difference
-        kappa_pert = kappa.at[i].add(epsilon)
-        L_pert = differentiable_loss(kappa_pert, gamma_obs, mesh)
-        
-        gradient = gradient.at[i].set((L_pert - L0) / epsilon)
-    
-    print(f"  {n}/{n} ✓")
-    
-    return gradient
-
-
-def validate_gradients(kappa: jnp.ndarray,
-                      gamma_obs: Tuple[jnp.ndarray, jnp.ndarray],
-                      mesh,
-                      n_samples: int = 10,
-                      epsilon: float = 1e-5,
-                      verbose: bool = True) -> Dict:
-    """
-    Validate autodiff gradients against finite differences
-    
-    Compares ∂L/∂κ from autodiff vs finite differences on random samples
+    Compares ∂ψ[i]/∂κ[j] from autodiff vs finite differences on random samples
     
     Args:
         kappa: Convergence field
-        gamma_obs: Observed shear
         mesh: Mesh object
-        n_samples: Number of components to check
+        n_samples: Number of gradient components to check
         epsilon: FD step size
         verbose: Print detailed comparison
         
@@ -252,23 +130,21 @@ def validate_gradients(kappa: jnp.ndarray,
         dict with validation results
     """
     print("=" * 70)
-    print("GRADIENT VALIDATION: Autodiff vs Finite Differences")
+    print("GRADIENT VALIDATION: Potential Gradients (∂ψ/∂κ)")
     print("=" * 70)
     
-    # Compute full autodiff gradient
-    print("\n1. Computing autodiff gradient...")
-    t0 = time.time()
-    grad_auto = compute_gradient_loss(kappa, gamma_obs, mesh)
-    t_auto = time.time() - t0
-    print(f"   Time: {t_auto:.4f}s")
-    print(f"   Norm: {jnp.linalg.norm(grad_auto):.6e}")
-    
-    # Sample random components
+    # Solve forward model
+    psi = forward_model_potential(kappa, mesh)
     n = len(kappa)
-    sample_indices = jnp.array(np.random.choice(n, size=min(n_samples, n), replace=False))
     
-    print(f"\n2. Computing finite difference gradient for {len(sample_indices)} samples...")
-    t0 = time.time()
+    # Select random node and kappa indices to test
+    np.random.seed(42)
+    node_indices = np.random.choice(n, size=min(n_samples, n), replace=False)
+    kappa_indices = np.random.choice(n, size=min(n_samples, n), replace=False)
+    
+    print(f"\nTesting {n_samples} gradient components...")
+    print(f"{'Node i':>8} {'κ j':>8} {'Autodiff':>15} {'Finite Diff':>15} {'Rel Error':>12}")
+    print("-" * 70)
     
     results = {
         'auto': [],
@@ -277,16 +153,15 @@ def validate_gradients(kappa: jnp.ndarray,
         'abs_error': []
     }
     
-    L0 = differentiable_loss(kappa, gamma_obs, mesh)
-    
-    for idx in sample_indices:
-        # Autodiff
-        g_auto = grad_auto[idx]
+    for node_i, kappa_j in zip(node_indices, kappa_indices):
+        # Autodiff gradient: ∂ψ[node_i]/∂κ[kappa_j]
+        grad_auto = compute_gradient_at_point(kappa, mesh, node_i)
+        g_auto = grad_auto[kappa_j]
         
         # Finite difference
-        kappa_pert = kappa.at[idx].add(epsilon)
-        L_pert = differentiable_loss(kappa_pert, gamma_obs, mesh)
-        g_fd = (L_pert - L0) / epsilon
+        kappa_pert = kappa.at[kappa_j].add(epsilon)
+        psi_pert = forward_model_potential(kappa_pert, mesh)
+        g_fd = (psi_pert[node_i] - psi[node_i]) / epsilon
         
         # Compare
         abs_err = float(jnp.abs(g_auto - g_fd))
@@ -298,34 +173,28 @@ def validate_gradients(kappa: jnp.ndarray,
         results['rel_error'].append(rel_err)
         
         if verbose:
-            print(f"   κ[{idx:4d}]: autodiff={g_auto:12.6e}, FD={g_fd:12.6e}, "
-                  f"err={rel_err:10.2e}")
-    
-    t_fd = time.time() - t0
-    print(f"   Time: {t_fd:.4f}s")
+            print(f"{node_i:8d} {kappa_j:8d} {g_auto:15.6e} {g_fd:15.6e} {rel_err:12.2e}")
     
     # Statistics
     mean_rel_err = np.mean(results['rel_error'])
     max_rel_err = np.max(results['rel_error'])
     
-    print(f"\n3. Validation Summary:")
-    print(f"   Mean relative error: {mean_rel_err:.6e}")
-    print(f"   Max relative error:  {max_rel_err:.6e}")
-    print(f"   Speedup (autodiff): {t_fd/t_auto:.1f}× faster")
+    print("-" * 70)
+    print(f"\nValidation Summary:")
+    print(f"  Mean relative error: {mean_rel_err:.6e}")
+    print(f"  Max relative error:  {max_rel_err:.6e}")
     
     # Pass/fail
     tolerance = 1e-4
     passed = max_rel_err < tolerance
     
-    print(f"\n   Result: {'✓ PASS' if passed else '✗ FAIL'} "
+    print(f"\n  Result: {'✅ PASS' if passed else '❌ FAIL'} "
           f"(tolerance = {tolerance:.0e})")
-    
     print("=" * 70)
     
     results['mean_rel_error'] = mean_rel_err
     results['max_rel_error'] = max_rel_err
     results['passed'] = passed
-    results['speedup'] = t_fd / t_auto
     
     return results
 
@@ -334,21 +203,17 @@ def validate_gradients(kappa: jnp.ndarray,
 # Performance Profiling
 # ============================================================================
 
-def profile_forward_backward(kappa: jnp.ndarray,
-                            gamma_obs: Tuple[jnp.ndarray, jnp.ndarray],
-                            mesh,
-                            n_trials: int = 10) -> Dict:
+def profile_forward_backward_potential(kappa: jnp.ndarray, mesh,
+                                      n_trials: int = 10) -> Dict:
     """
-    Profile performance of forward and backward passes
+    Profile performance of forward and backward passes for potential
     
     Measures:
-    - Forward pass time (κ → γ)
-    - Backward pass time (∂L/∂κ)
-    - Combined time (value + gradient)
+    - Forward pass time (κ → ψ)
+    - Backward pass time (∂ψ/∂κ for one node)
     
     Args:
         kappa: Convergence field
-        gamma_obs: Observed shear
         mesh: Mesh object
         n_trials: Number of timing trials
         
@@ -356,133 +221,151 @@ def profile_forward_backward(kappa: jnp.ndarray,
         dict with timing results
     """
     print("=" * 70)
-    print("PERFORMANCE PROFILING: Forward vs Backward Pass")
+    print("PERFORMANCE PROFILING: Potential Gradients")
     print("=" * 70)
     
     # Compile everything first
     print("\nWarmup (JIT compilation)...")
-    _ = differentiable_loss(kappa, gamma_obs, mesh)
-    _ = compute_gradient_loss(kappa, gamma_obs, mesh)
-    _ = compute_value_and_gradient(kappa, gamma_obs, mesh)
-    print("✓ Warmup complete\n")
+    _ = forward_model_potential(kappa, mesh)
+    _ = compute_gradient_at_point(kappa, mesh, 0)
+    print("✅ Warmup complete\n")
     
     # Forward pass only
-    print(f"1. Forward pass (κ → γ → loss) [{n_trials} trials]...")
+    print(f"1. Forward pass (κ → ψ) [{n_trials} trials]...")
     times_fwd = []
     for i in range(n_trials):
         t0 = time.time()
-        loss = differentiable_loss(kappa, gamma_obs, mesh)
-        jax.block_until_ready(loss)  # Wait for GPU
+        psi = forward_model_potential(kappa, mesh)
+        jax.block_until_ready(psi)  # Wait for GPU
         times_fwd.append(time.time() - t0)
     
     t_fwd = np.median(times_fwd)
     print(f"   Median time: {t_fwd*1000:.2f} ms")
     
-    # Backward pass only
-    print(f"\n2. Backward pass (∂L/∂κ) [{n_trials} trials]...")
+    # Backward pass (gradient at one node)
+    print(f"\n2. Backward pass (∂ψ[i]/∂κ for single node) [{n_trials} trials]...")
     times_bwd = []
+    node_idx = mesh.n_nodes // 2  # Middle node
     for i in range(n_trials):
         t0 = time.time()
-        grad = compute_gradient_loss(kappa, gamma_obs, mesh)
+        grad = compute_gradient_at_point(kappa, mesh, node_idx)
         jax.block_until_ready(grad)
         times_bwd.append(time.time() - t0)
     
     t_bwd = np.median(times_bwd)
     print(f"   Median time: {t_bwd*1000:.2f} ms")
     
-    # Combined (efficient!)
-    print(f"\n3. Combined (value + gradient) [{n_trials} trials]...")
-    times_both = []
-    for i in range(n_trials):
-        t0 = time.time()
-        loss, grad = compute_value_and_gradient(kappa, gamma_obs, mesh)
-        jax.block_until_ready((loss, grad))
-        times_both.append(time.time() - t0)
-    
-    t_both = np.median(times_both)
-    print(f"   Median time: {t_both*1000:.2f} ms")
-    
     # Analysis
-    print(f"\n4. Analysis:")
+    print(f"\n3. Analysis:")
     print(f"   Forward:  {t_fwd*1000:6.2f} ms")
     print(f"   Backward: {t_bwd*1000:6.2f} ms  ({t_bwd/t_fwd:.2f}× forward)")
-    print(f"   Combined: {t_both*1000:6.2f} ms  (saves {(t_fwd+t_bwd-t_both)*1000:.2f} ms)")
-    print(f"   Efficiency: {(t_fwd+t_bwd)/t_both:.2f}× (shared forward pass)")
+    print(f"   Note: Backward includes forward pass (autodiff)")
     
     print("=" * 70)
     
     return {
         'forward_ms': t_fwd * 1000,
         'backward_ms': t_bwd * 1000,
-        'combined_ms': t_both * 1000,
         'backward_overhead': t_bwd / t_fwd,
-        'efficiency_gain': (t_fwd + t_bwd) / t_both
     }
 
 
 # ============================================================================
-# Example Usage
+# Demonstration
 # ============================================================================
 
 def demonstrate_autodiff():
     """
-    Complete demonstration of autodiff capabilities
+    Demonstration of autodiff capabilities (P1 elements - potential only)
+    
+    NOTE: Full shear→mass reconstruction requires P3 elements.
+    This demo shows potential ψ gradients only.
     """
     print("\n" + "🚀" * 35)
-    print(" " * 25 + "AUTODIFF DEMONSTRATION")
+    print(" " * 20 + "AUTODIFF DEMONSTRATION (P1)")
     print("🚀" * 35)
     
     # Setup
     print("\nSetup: Creating synthetic problem...")
     from .fem_solver import GaussianLens, solve_lensing_poisson
-    from .mesh_generator import generate_p2_structured_mesh
+    from .mesh_generator import generate_structured_mesh
     
     lens = GaussianLens(amplitude=1.0, sigma=0.3)
-    mesh = generate_p2_structured_mesh(20, 20, xmin=-1, xmax=1, ymin=-1, ymax=1)
+    mesh = generate_structured_mesh(20, 20, xmin=-1, xmax=1, ymin=-1, ymax=1)
     
-    print(f"  Mesh: {mesh.n_nodes} nodes")
+    print(f"  Mesh: {mesh.n_nodes} nodes (P1 elements)")
     
     # Generate "true" convergence
     kappa_true = jnp.array([lens.kappa(x, y) for x, y in mesh.nodes])
     
-    # Generate "observed" shear (forward model)
-    print("\nGenerating synthetic observations...")
-    gamma1_obs, gamma2_obs = forward_model_shear(kappa_true, mesh)
-    gamma_obs = (gamma1_obs, gamma2_obs)
+    # Solve forward model (potential only for now)
+    print("\nSolving forward model (κ → ψ)...")
+    solution = solve_lensing_poisson(mesh, kappa_true, verbose=False)
     
-    print(f"  Shear points: {len(gamma1_obs)}")
-    print(f"  Max |γ|: {jnp.max(jnp.sqrt(gamma1_obs**2 + gamma2_obs**2)):.4f}")
+    print(f"  Max |ψ|: {jnp.max(jnp.abs(solution.psi)):.4f}")
+    print(f"  Max |α|: {jnp.max(jnp.linalg.norm(solution.alpha, axis=1)):.4f}")
     
-    # Test with perturbed initial guess
-    kappa_init = kappa_true * 0.5  # 50% of truth
+    # Validate gradients
+    print("\n" + "=" * 70)
+    print("Testing autodiff gradients...")
+    print("=" * 70)
+    validate_potential_gradients(kappa_true, mesh, n_samples=5)
     
-    print(f"\nInitial guess: 50% of true convergence")
-    
-    # Compute loss and gradient
-    print("\nComputing loss and gradient...")
-    loss, grad = compute_value_and_gradient(kappa_init, gamma_obs, mesh)
-    
-    print(f"  Loss: {loss:.6e}")
-    print(f"  Gradient norm: {jnp.linalg.norm(grad):.6e}")
-    print(f"  Max gradient: {jnp.max(jnp.abs(grad)):.6e}")
-    
-    # Validate
-    validate_gradients(kappa_init, gamma_obs, mesh, n_samples=20)
-    
-    # Profile
-    profile_forward_backward(kappa_init, gamma_obs, mesh, n_trials=5)
+    # Profile performance
+    print("\n" + "=" * 70)
+    print("Profiling performance...")
+    print("=" * 70)
+    profile_forward_backward_potential(kappa_true, mesh, n_trials=5)
     
     print("\n" + "=" * 70)
-    print("✓ Autodiff integration complete and validated!")
-    print("\nYou now have:")
-    print("  1. Differentiable forward model: κ → ψ → γ")
-    print("  2. Automatic gradient computation: ∂L/∂κ")
-    print("  3. Validated against finite differences")
-    print("  4. Performance profiled")
-    print("\nReady for Phase 3: Bayesian mass reconstruction!")
+    print("✅ Autodiff framework ready!")
+    print("=" * 70)
+    print("\nCurrent capabilities:")
+    print("  1. ✅ Differentiable forward model: κ → ψ")
+    print("  2. ✅ Potential gradients: ∂ψ/∂κ")
+    print("  3. ✅ Validated against finite differences")
+    print("  4. ✅ Performance profiled")
+    print("\nLimitations (P1 elements):")
+    print("  ⚠️  Shear γ = ∇²ψ not available (P1 → constant ∇²ψ = 0)")
+    print("  ⚠️  Cannot do shear→mass reconstruction yet")
+    print("\nNext steps:")
+    print("  → Implement P3 elements for O(h⁴) potential accuracy")
+    print("  → Add P3 shear computation: γ with O(h²) convergence")
+    print("  → Complete differentiable shear→mass pipeline")
+    print("  → Bayesian inference with Laplace approximation")
     print("=" * 70)
 
 
+# ============================================================================
+# TODO: Shear-based functions (requires P3 implementation)
+# ============================================================================
+
+"""
+The following functions will be implemented after P3 elements are added:
+
+1. forward_model_shear(kappa, mesh) -> (gamma1, gamma2)
+   - Differentiable κ → ψ → γ pipeline
+   - Requires P3 second derivatives
+
+2. differentiable_loss(kappa, gamma_obs, mesh) -> loss
+   - Loss function: ||γ_pred - γ_obs||²
+   - For inverse problem optimization
+
+3. compute_gradient_loss(kappa, gamma_obs, mesh) -> ∂L/∂κ
+   - Gradient descent for mass reconstruction
+   - Automatic differentiation through full pipeline
+
+4. hessian_vector_product(kappa, v, gamma_obs, mesh) -> Hv
+   - For Newton-CG optimization
+   - Laplace approximation for UQ
+
+5. compute_fisher_information(kappa, mesh) -> F
+   - Fisher information matrix
+   - Posterior covariance estimation
+
+See ISP document for complete implementation plan.
+"""
+
+
 if __name__ == "__main__":
-    import numpy as np
     demonstrate_autodiff()
