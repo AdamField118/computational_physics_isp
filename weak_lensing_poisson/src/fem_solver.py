@@ -1,6 +1,6 @@
 """
 JAX-based Finite Element Method solver for weak gravitational lensing
-Solves: \nabla^2\psi = 2\kappa on 2D domains
+Solves:  nabla^2 psi = 2 kappa on 2D domains
 """
 
 import jax
@@ -63,7 +63,7 @@ def compute_shape_gradients(coords: jnp.ndarray) -> jnp.ndarray:
         coords: (3, 2) array of vertex coordinates
         
     Returns:
-        (3, 2) array where grad_N[i] = \nabla N_i = [\frac{\partial N_i}{\partial x}, \frac{\partial N_i}{\partial y}]
+        (3, 2) array where grad_N[i] =  nabla N_i = [ frac{ partial N_i}{ partial x},  frac{ partial N_i}{ partial y}]
     """
     x1, x2, x3 = coords[:, 0]
     y1, y2, y3 = coords[:, 1]
@@ -73,9 +73,9 @@ def compute_shape_gradients(coords: jnp.ndarray) -> jnp.ndarray:
     two_area = jnp.abs(det)
     
     # Gradients of barycentric coordinates
-    # \nabla\lambda_1 = 1/(2A) * [y2-y3, x3-x2]
-    # \nabla\lambda__2 = 1/(2A) * [y3-y1, x1-x3]
-    # \nabla\lambda__3 = 1/(2A) * [y1-y2, x2-x1]
+    #  nabla lambda_1 = 1/(2A) * [y2-y3, x3-x2]
+    #  nabla lambda__2 = 1/(2A) * [y3-y1, x1-x3]
+    #  nabla lambda__3 = 1/(2A) * [y1-y2, x2-x1]
     grad_N = jnp.array([
         [y2 - y3, x3 - x2],
         [y3 - y1, x1 - x3],
@@ -90,7 +90,7 @@ def compute_element_stiffness(coords: jnp.ndarray) -> jnp.ndarray:
     """
     Compute element stiffness matrix K^e
     
-    K^e[i,j] = \int_T \nabla N_i \cdot ∇N_j dA = Area(T) * \nabla N_i \cdot \nabla N_j
+    K^e[i,j] =  int_T  nabla N_i  cdot ∇N_j dA = Area(T) *  nabla N_i  cdot  nabla N_j
     
     Args:
         coords: (3, 2) array of vertex coordinates
@@ -101,7 +101,7 @@ def compute_element_stiffness(coords: jnp.ndarray) -> jnp.ndarray:
     area = compute_element_area(coords)
     grad_N = compute_shape_gradients(coords)
     
-    # K^e[i,j] = area * grad_N[i] \cdot grad_N[j]
+    # K^e[i,j] = area * grad_N[i]  cdot grad_N[j]
     K_elem = area * jnp.dot(grad_N, grad_N.T)
     
     return K_elem
@@ -112,12 +112,12 @@ def compute_element_load(coords: jnp.ndarray, kappa_vals: jnp.ndarray) -> jnp.nd
     """
     Compute element load vector F^e for piecewise linear source
     
-    F^e[i] = ∫\int_T 2\kappa N_i dA
+    F^e[i] =  int_T 2 kappa N_i dA
     
-    For linear \kappa interpolation: \kappa = \Sigma \kappa_j N_j
-    Then: F^e[i] = 2 * \Sigma_j \kappa_j * \int_T N_i N_j dA
+    For linear  kappa interpolation:  kappa =  Sigma  kappa_j N_j
+    Then: F^e[i] = 2 *  Sigma_j  kappa_j *  int_T N_i N_j dA
     
-    Using formula: \int_T N_i N_j dA = Area/12 * (1 + \delta_ij)
+    Using formula:  int_T N_i N_j dA = Area/12 * (1 +  delta_ij)
     
     Args:
         coords: (3, 2) array of vertex coordinates
@@ -136,26 +136,43 @@ def compute_element_load(coords: jnp.ndarray, kappa_vals: jnp.ndarray) -> jnp.nd
         area / 12.0
     )
     
-    # F^e = 2 * M * κ
-    F_elem = 2.0 * jnp.dot(M_elem, kappa_vals)
+    # F^e = -2 * M * κ
+    F_elem = -2.0 * jnp.dot(M_elem, kappa_vals)
     
     return F_elem
 
 
-def assemble_system(mesh: Mesh, kappa: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+def assemble_system(mesh, kappa: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """
     Assemble global stiffness matrix K and load vector F
     
-    This is the tricky part in JAX - we need to scatter element contributions
-    to the global arrays. We'll use a loop with dynamic updates.
+    Automatically detects element type (P1 or P2) from mesh.elements.shape[1]
     
     Args:
         mesh: Mesh object
         kappa: (n_nodes,) convergence field at nodes
         
     Returns:
-        K: (n_nodes, n_nodes) sparse stiffness matrix (stored dense for now)
+        K: (n_nodes, n_nodes) stiffness matrix
         F: (n_nodes,) load vector
+    """
+    n = mesh.n_nodes
+    nodes_per_elem = mesh.elements.shape[1]
+    
+    # Detect element type and route to appropriate assembly
+    if nodes_per_elem == 3:
+        print("  Element type: P1 (linear)")
+        return assemble_system_p1(mesh, kappa)
+    else:
+        raise ValueError(f"Unknown element type with {nodes_per_elem} nodes per element")
+
+
+def assemble_system_p1(mesh, kappa: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    """
+    Assemble system for P1 (linear) elements
+    
+    THIS IS YOUR EXISTING CODE - don't change it!
+    Just rename your current assemble_system to this.
     """
     n = mesh.n_nodes
     
@@ -163,7 +180,6 @@ def assemble_system(mesh: Mesh, kappa: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.nd
     K_global = jnp.zeros((n, n))
     F_global = jnp.zeros(n)
     
-    # Vectorize over all elements
     def assemble_element(carry, elem_idx):
         K_glob, F_glob = carry
         
@@ -176,13 +192,12 @@ def assemble_system(mesh: Mesh, kappa: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.nd
         # Get convergence at element nodes
         kappa_elem = kappa[nodes_idx]  # (3,)
         
-        # Compute element matrices
-        K_elem = compute_element_stiffness(coords)
-        F_elem = compute_element_load(coords, kappa_elem)
+        # Compute element matrices - THESE ARE YOUR P1 FUNCTIONS
+        K_elem = compute_element_stiffness(coords)       # P1 version
+        F_elem = compute_element_load(coords, kappa_elem)  # P1 version
         
         # Assembly: K[i,j] += K_elem[local_i, local_j]
-        # Use dynamic_update_slice for efficient updates
-        for i in range(3):
+        for i in range(3):  # P1 has 3 nodes
             glob_i = nodes_idx[i]
             for j in range(3):
                 glob_j = nodes_idx[j]
@@ -192,7 +207,7 @@ def assemble_system(mesh: Mesh, kappa: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.nd
         
         return (K_glob, F_glob), None
     
-    # Scan over elements (more efficient than fori_loop for large meshes)
+    # Scan over elements
     (K_global, F_global), _ = jax.lax.scan(
         assemble_element,
         (K_global, F_global),
@@ -201,12 +216,11 @@ def assemble_system(mesh: Mesh, kappa: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.nd
     
     return K_global, F_global
 
-
 @jit
 def apply_dirichlet_bc(K: jnp.ndarray, F: jnp.ndarray, 
                        boundary_nodes: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """
-    Apply homogeneous Dirichlet boundary conditions: \psi = 0 on \partial\Omega 
+    Apply homogeneous Dirichlet boundary conditions:  psi = 0 on  partial Omega 
 
     Method: Set K[i,:] = 0, K[i,i] = 1, F[i] = 0 for boundary nodes
     
@@ -276,23 +290,23 @@ def conjugate_gradient(K: jnp.ndarray, f: jnp.ndarray,
         # Ap = K @ p
         Ap = jnp.dot(K, p)
         
-        # \alpha = rsold / (p^T @ Ap)
+        #  alpha = rsold / (p^T @ Ap)
         pAp = jnp.dot(p, Ap)
         alpha = rsold / (pAp + 1e-14)  # Regularize
         
-        # x = x + \alpha*p
+        # x = x +  alpha*p
         x = x + alpha * p
         
-        # r = r - \alpha*Ap
+        # r = r -  alpha*Ap
         r = r - alpha * Ap
         
         # rsnew = r^T @ r
         rsnew = jnp.dot(r, r)
         
-        # \beta = rsnew / rsold
+        #  beta = rsnew / rsold
         beta = rsnew / (rsold + 1e-14)
         
-        # p = r + \beta*p
+        # p = r +  beta*p
         p = r + beta * p
         
         return (x, r, p, rsnew), rsnew
@@ -316,9 +330,9 @@ def conjugate_gradient(K: jnp.ndarray, f: jnp.ndarray,
 
 
 @jit
-def compute_deflection(mesh: Mesh, psi: jnp.ndarray) -> jnp.ndarray:
+def compute_deflection_p1(mesh: Mesh, psi: jnp.ndarray) -> jnp.ndarray:
     """
-    Compute deflection angle \alpha = \nabla\psi at mesh nodes
+    Compute deflection angle  alpha =  nabla psi at mesh nodes
     
     For P1 elements, gradient is piecewise constant. We average
     contributions from all elements touching each node.
@@ -328,7 +342,7 @@ def compute_deflection(mesh: Mesh, psi: jnp.ndarray) -> jnp.ndarray:
         psi: (n_nodes,) lensing potential
         
     Returns:
-        alpha: (n_nodes, 2) deflection angle [\alpha_x, \alpha_y]
+        alpha: (n_nodes, 2) deflection angle [ alpha_x,  alpha_y]
     """
     n = mesh.n_nodes
     
@@ -347,7 +361,7 @@ def compute_deflection(mesh: Mesh, psi: jnp.ndarray) -> jnp.ndarray:
         # Compute shape function gradients
         grad_N = compute_shape_gradients(coords)
         
-        # Element gradient: \nabla\psi = \Sigma \psi_i * \nabla N_i (constant on element)
+        # Element gradient:  nabla psi =  Sigma  psi_i *  nabla N_i (constant on element)
         grad_psi = jnp.dot(grad_N.T, psi_elem)  # (2,) = (3,2).T @ (3,)
         
         # Add contribution to all three nodes of this element
@@ -370,6 +384,15 @@ def compute_deflection(mesh: Mesh, psi: jnp.ndarray) -> jnp.ndarray:
     
     return alpha
 
+@jit
+def compute_deflection(mesh, psi: jnp.ndarray) -> jnp.ndarray:
+    """Compute deflection - routes to P1 or P2"""
+    nodes_per_elem = mesh.elements.shape[1]
+    if nodes_per_elem == 3:
+        return compute_deflection_p1(mesh, psi)
+    else:
+        raise ValueError(f"Unknown element type: {nodes_per_elem} nodes")
+
 
 def solve_lensing_poisson(mesh: Mesh, 
                           kappa: jnp.ndarray,
@@ -377,7 +400,7 @@ def solve_lensing_poisson(mesh: Mesh,
                           maxiter: int = 1000,
                           verbose: bool = True) -> FEMSolution:
     """
-    Complete FEM solver for lensing Poisson equation: \nabla^2 \psi = 2\kappa
+    Complete FEM solver for lensing Poisson equation:  nabla^2  psi = 2 kappa
     
     Args:
         mesh: Mesh object
@@ -402,29 +425,29 @@ def solve_lensing_poisson(mesh: Mesh,
         print(f"  Matrix size: {K.shape[0]} × {K.shape[1]}")
         print(f"  Applying boundary conditions...")
     
-    # Apply Dirichlet BC: \psi = 0 on boundary
+    # Apply Dirichlet BC:  psi = 0 on boundary
     K_bc, F_bc = apply_dirichlet_bc(K, F, mesh.boundary)
     
     if verbose:
         print(f"  Solving with Conjugate Gradient...")
     
-    # Solve K\psi= F
+    # Solve K psi= F
     psi, iterations, residual = conjugate_gradient(K_bc, F_bc, tol=tol, maxiter=maxiter)
     
     if verbose:
         print(f"  CG iterations: {iterations}")
         print(f"  Final residual: {residual:.6e}")
-        print(f"  Max |\psi|: {jnp.max(jnp.abs(psi)):.6f}")
+        print(f"  Max | psi|: {jnp.max(jnp.abs(psi)):.6f}")
     
     # Compute deflection field
     if verbose:
-        print(f"Computing deflection field \alpha = ∇ψ...")
+        print(f"Computing deflection field  alpha = ∇ψ...")
     
     alpha = compute_deflection(mesh, psi)
     
     if verbose:
         alpha_mag = jnp.sqrt(jnp.sum(alpha**2, axis=1))
-        print(f"  Max |\alpha|: {jnp.max(alpha_mag):.6f}")
+        print(f"  Max | alpha|: {jnp.max(alpha_mag):.6f}")
     
     return FEMSolution(
         psi=psi,
@@ -439,56 +462,79 @@ def solve_lensing_poisson(mesh: Mesh,
 # Helper functions for verification and visualization
 # ============================================================================
 
-def compute_errors(mesh: Mesh, psi_numerical: jnp.ndarray, 
-                  psi_exact_func) -> dict:
+@jit
+def compute_errors_p1(mesh, psi_numerical: jnp.ndarray, 
+                     psi_exact: jnp.ndarray) -> dict:
     """
-    Compute L2, H1, and Linf errors against exact solution
+    Compute L2 and L∞ errors for P1 elements
     
     Args:
         mesh: Mesh object
-        psi_numerical: numerical solution
-        psi_exact_func: function(x, y) -> exact solution value
-        
+        psi_numerical: (n_nodes,) numerical solution
+        psi_exact: (n_nodes,) exact solution at nodes
+    
     Returns:
-        dict with 'L2', 'H1', 'Linf' error norms
+        dict with 'l2' and 'linf' errors
     """
-    # Evaluate exact solution at nodes
-    psi_exact = jnp.array([
-        psi_exact_func(x, y) 
-        for x, y in mesh.nodes
-    ])
+    l2_sum = 0.0
+    linf_error = 0.0
     
-    # L-infinity error
-    Linf_error = jnp.max(jnp.abs(psi_numerical - psi_exact))
-    
-    # L2 error (approximate via element-wise integration)
-    L2_sq = 0.0
-    for elem_idx in range(mesh.n_elements):
-        nodes_idx = mesh.elements[elem_idx]
-        coords = mesh.nodes[nodes_idx]
+    def accumulate_error(carry, elem_idx):
+        l2_sum, linf_error = carry
         
-        # Element errors at nodes
-        e1, e2, e3 = psi_numerical[nodes_idx] - psi_exact[nodes_idx]
+        nodes_idx = mesh.elements[elem_idx]  # (3,)
+        coords = mesh.nodes[nodes_idx]  # (3, 2)
         
-        # Area
+        # Error at each node
+        error_vals = psi_numerical[nodes_idx] - psi_exact[nodes_idx]
+        e1, e2, e3 = error_vals[0], error_vals[1], error_vals[2]
+        
+        # Element area
         area = compute_element_area(coords)
         
-        # L2 norm: \int_T e^2 ≈ area/3 * (e1^2 + e2^2 + e3^2) for P1
-        L2_sq += area * (e1**2 + e2**2 + e3**2) / 3.0
+        # L2 contribution: ∫_T e² dA ≈ area/3 * (e1² + e2² + e3²)
+        l2_contrib = (area / 3.0) * (e1**2 + e2**2 + e3**2)
+        l2_sum = l2_sum + l2_contrib
+        
+        # L∞ error
+        elem_linf = jnp.max(jnp.abs(error_vals))
+        linf_error = jnp.maximum(linf_error, elem_linf)
+        
+        return (l2_sum, linf_error), None
     
-    L2_error = jnp.sqrt(L2_sq)
+    (l2_sum, linf_error), _ = jax.lax.scan(
+        accumulate_error,
+        (l2_sum, linf_error),
+        jnp.arange(mesh.n_elements)
+    )
     
-    # H1 seminorm (approximate)
-    # For proper implementation, would compute \nabla e on each element
-    # Placeholder for now
-    H1_error = L2_error  # TODO: implement properly
+    l2_error = jnp.sqrt(l2_sum)
     
     return {
-        'L2': float(L2_error),
-        'H1': float(H1_error),
-        'Linf': float(Linf_error)
+        'l2': l2_error,
+        'linf': linf_error
     }
 
+@jit
+def compute_errors(mesh, psi_numerical: jnp.ndarray, 
+                  psi_exact: jnp.ndarray) -> dict:
+    """
+    Compute L2 and L∞ errors - automatically detects P1 vs P2
+    
+    Args:
+        mesh: Mesh object
+        psi_numerical: (n_nodes,) numerical solution
+        psi_exact: (n_nodes,) exact solution at nodes
+    
+    Returns:
+        dict with 'l2' and 'linf' errors
+    """
+    nodes_per_elem = mesh.elements.shape[1]
+    
+    if nodes_per_elem == 3:
+        return compute_errors_p1(mesh, psi_numerical, psi_exact)
+    else:
+        raise ValueError(f"Unknown element type: {nodes_per_elem} nodes/elem")
 
 # ============================================================================
 # Example analytic lensing solutions for validation
@@ -565,10 +611,67 @@ class GaussianLens:
         alpha_mag = self.amplitude * self.sigma**2 * (1 - jnp.exp(-r2 / (2 * self.sigma**2))) / r
         return (alpha_mag * x / r, alpha_mag * y / r)
 
+class SinusoidalLens:
+    """
+    Manufactured solution for convergence testing
+    
+    Perfect for validation because:
+    - Smooth (C^infty)
+    - Satisfies homogeneous Dirichlet BC exactly
+    - Known exact solution and source
+    """
+    
+    def __init__(self, k: int = 1):
+        """
+        Args:
+            k: Wavenumber (k=1 gives one wavelength across [0,1]x[0,1])
+        """
+        self.k = k
+    
+    def psi(self, x: float, y: float) -> float:
+        """Exact lensing potential"""
+        return jnp.sin(self.k * jnp.pi * x) * jnp.sin(self.k * jnp.pi * y)
+    
+    def kappa(self, x: float, y: float) -> float:
+        """Convergence field (from nabla^2psi = 2kappa)"""
+        # nabla^2psi = frac{partial^2psi}{partial x^2} + frac{partial^2psi}{partial y^2}
+        #     = -k^2pi^2 sin(kpi x)sin(kpi y) - k^2pi^2 sin(kpi x)sin(kpi y)
+        #     = -2k^2pi^2 sin(kpi x)sin(kpi y)
+        # So: kappa = frac{nabla^2psi}{2} = -k^2pi^2 sin(kpi x)sin(kpi y)
+        return -self.k**2 * jnp.pi**2 * jnp.sin(self.k * jnp.pi * x) * jnp.sin(self.k * jnp.pi * y)
+    
+    def alpha(self, x: float, y: float) -> tuple:
+        """Deflection angle (gradient of psi)"""
+        alpha_x = self.k * jnp.pi * jnp.cos(self.k * jnp.pi * x) * jnp.sin(self.k * jnp.pi * y)
+        alpha_y = self.k * jnp.pi * jnp.sin(self.k * jnp.pi * x) * jnp.cos(self.k * jnp.pi * y)
+        return (alpha_x, alpha_y)
 
-if __name__ == "__main__":
-    print("JAX FEM Weak Lensing Solver")
-    print("=" * 60)
-    print("This module provides GPU-accelerated finite element")
-    print("solution of the lensing Poisson equation: \nabla^2\psi = 2\kappa")
-    print("=" * 60)
+
+class PolynomialLens:
+    """
+    Polynomial manufactured solution
+    
+    Domain: [-1, 1] x [-1, 1]
+    Solution: psi = (1 - x^2)(1 - y^2)
+    
+    Vanishes on all four edges, smooth everywhere
+    """
+    
+    def psi(self, x: float, y: float) -> float:
+        """Exact lensing potential"""
+        return (1 - x**2) * (1 - y**2)
+    
+    def kappa(self, x: float, y: float) -> float:
+        """Convergence field"""
+        # ∇²ψ = ∂²ψ/∂x² + ∂²ψ/∂y²
+        # ∂ψ/∂x = -2x(1 - y²)  →  ∂²ψ/∂x² = -2(1 - y²)
+        # ∂ψ/∂y = -2y(1 - x²)  →  ∂²ψ/∂y² = -2(1 - x²)
+        # ∇²ψ = -2(1 - y²) - 2(1 - x²) = -2(2 - x² - y²)
+        # κ = ∇²ψ/2 = -(2 - x² - y²)
+        return -(2 - x**2 - y**2)
+    
+    def alpha(self, x: float, y: float) -> tuple:
+        """Deflection angle"""
+        alpha_x = -2 * x * (1 - y**2)
+        alpha_y = -2 * y * (1 - x**2)
+        return (alpha_x, alpha_y)
