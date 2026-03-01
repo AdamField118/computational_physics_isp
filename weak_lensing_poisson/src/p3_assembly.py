@@ -100,38 +100,47 @@ def get_gauss_quadrature_triangle(order: int = 4):
         weights = jnp.array([w1, w2, w2, w2, w3, w3, w3])
         
     elif order == 5:
-        # 13-point rule (degree 7 exact) - CRITICAL FOR P3 ISOPARAMETRIC!
-        # Reference: Dunavant (1985)
-        a1 = 0.0651301029022
-        a2 = 0.8697397941956
-        
-        b1 = 0.3128654960049
-        b2 = 0.6384441885698
-        
-        c1 = 0.2603459660790
-        c2 = 0.4793080678419
-        
-        w1 = -0.1495700444677
-        w2 = 0.1756152574332
-        w3 = 0.0533472356088
-        w4 = 0.0771137608903
-        
+        # Dunavant degree-7 rule (13 points)
+    
+        a = 0.065130102902216
+        b = 0.312865496004875
+        c = 0.260345966079040
+        d = 0.479308067841920
+    
+        w0 = -0.149570044467670
+        w1 =  0.175615257433208
+        w2 =  0.053347235608839
+        w3 =  0.077113760890257
+    
         points = jnp.array([
-            [1/3, 1/3],           # Center
-            [a1, a1],             # Near vertex 0
-            [a2, a1],             # Near vertex 1  
-            [a1, a2],             # Near vertex 2
-            [b1, b1],             # Interior point set 1
-            [b2, b1],
-            [b1, b2],
-            [c1, c1],             # Interior point set 2
-            [c2, c1],
-            [c1, c2],
-            [c2, c2],             # Additional interior points
-            [c1, c2],
-            [c2, c1]
+            # centroid
+            [1/3, 1/3],
+    
+            # a-set
+            [a, a],
+            [1-2*a, a],
+            [a, 1-2*a],
+    
+            # b-set
+            [b, b],
+            [1-2*b, b],
+            [b, 1-2*b],
+    
+            # c,d set (6 permutations)
+            [c, d],
+            [d, c],
+            [c, 1-c-d],
+            [1-c-d, c],
+            [d, 1-c-d],
+            [1-c-d, d],
         ])
-        weights = jnp.array([w1, w2, w2, w2, w3, w3, w3, w4, w4, w4, w4, w4, w4])
+    
+        weights = jnp.array([
+            w0,
+            w1, w1, w1,
+            w2, w2, w2,
+            w3, w3, w3, w3, w3, w3
+        ])
         
     else:
         raise ValueError(f"Quadrature order {order} not implemented")
@@ -150,30 +159,17 @@ def compute_element_stiffness_p3(coords: jnp.ndarray,
     """
     Compute 10×10 element stiffness matrix for P3 element
     
-    Uses SUBPARAMETRIC formulation:
-    - P1 (linear) geometry mapping from 3 vertices → constant Jacobian
-    - P3 (cubic) solution interpolation with 10 nodes
-    
     Ke[i,j] = ∫_T ∇Nᵢ · ∇Nⱼ dA
     
-    Args:
-        coords: (10, 2) node coordinates for this element
-        quad_points: (nq, 2) quadrature points in reference coords
-        quad_weights: (nq,) quadrature weights
-        
-    Returns:
-        Ke: (10, 10) element stiffness matrix
+    CRITICAL: Dunavant weights sum to 1.0, so integral = (detJ/2) * Σ wᵢ f(ξᵢ)
     """
     nq = len(quad_weights)
     Ke = jnp.zeros((10, 10))
     
     # SUBPARAMETRIC: Use only 3 vertex nodes for geometry
-    vertex_coords = coords[:3, :]  # (3, 2) - vertices only
+    vertex_coords = coords[:3, :]  # (3, 2)
     
     # Compute P1 geometry Jacobian (constant over element)
-    # For reference triangle (0,0), (1,0), (0,1) → physical (x0,y0), (x1,y1), (x2,y2)
-    # Jacobian J = [[∂x/∂ξ, ∂y/∂ξ], [∂x/∂η, ∂y/∂η]]
-    #            = [[x1-x0, y1-y0], [x2-x0, y2-y0]]
     x0, y0 = vertex_coords[0]
     x1, y1 = vertex_coords[1]
     x2, y2 = vertex_coords[2]
@@ -183,6 +179,9 @@ def compute_element_stiffness_p3(coords: jnp.ndarray,
     detJ = jnp.linalg.det(J)
     J_inv = jnp.linalg.inv(J)
     
+    # Physical element area (for quadrature with weights summing to 1.0)
+    area_factor = jnp.abs(detJ) / 2.0
+    
     # Loop over quadrature points
     for q in range(nq):
         xi, eta = quad_points[q]
@@ -191,14 +190,14 @@ def compute_element_stiffness_p3(coords: jnp.ndarray,
         # Get P3 shape function gradients in reference coordinates
         dN_dxi = compute_p3_shape_gradients_reference(xi, eta)  # (10, 2)
         
-        # Transform to physical coordinates using P1 Jacobian
-        dN_dxy = dN_dxi @ J_inv.T  # (10, 2) @ (2, 2) = (10, 2)
+        # Transform to physical coordinates
+        dN_dxy = dN_dxi @ J_inv.T  # (10, 2)
         
-        # Stiffness contribution (detJ is constant, can factor out)
+        # Stiffness contribution with CORRECT area factor
         for i in range(10):
             for j in range(10):
                 Ke = Ke.at[i, j].add(
-                    w * detJ * jnp.dot(dN_dxy[i], dN_dxy[j])
+                    w * area_factor * jnp.dot(dN_dxy[i], dN_dxy[j])
                 )
     
     return Ke
@@ -212,18 +211,9 @@ def compute_element_load_p3(coords: jnp.ndarray,
     """
     Compute 10×1 element load vector for P3 element
     
-    Uses SUBPARAMETRIC formulation (P1 geometry, P3 solution)
+    Fe[i] = -2 ∫_T Nᵢ κ dA
     
-    Fe[i] = -2 ∫_T Nᵢ κ dA   (negative from weak form, 2 from ∇²ψ = 2κ)
-    
-    Args:
-        coords: (10, 2) node coordinates
-        source_values: (10,) source κ evaluated at element nodes
-        quad_points: (nq, 2) quadrature points
-        quad_weights: (nq,) quadrature weights
-        
-    Returns:
-        Fe: (10,) element load vector
+    CRITICAL: Dunavant weights sum to 1.0, so integral = (detJ/2) * Σ wᵢ f(ξᵢ)
     """
     nq = len(quad_weights)
     Fe = jnp.zeros(10)
@@ -240,6 +230,9 @@ def compute_element_load_p3(coords: jnp.ndarray,
                    [x2 - x0, y2 - y0]])
     detJ = jnp.linalg.det(J)
     
+    # Physical element area
+    area_factor = jnp.abs(detJ) / 2.0
+    
     for q in range(nq):
         xi, eta = quad_points[q]
         w = quad_weights[q]
@@ -250,10 +243,8 @@ def compute_element_load_p3(coords: jnp.ndarray,
         # Source term at quadrature point (interpolated from nodes)
         kappa_q = jnp.dot(N, source_values)
         
-        # Load contribution from weak form: -∫∇ψ·∇v = ∫2κv
-        # This gives: -Kψ = F where F = ∫2κN
-        # Solver computes: Kψ = F_input, so we need F_input = -∫2κN
-        Fe += -2.0 * w * detJ * N * kappa_q
+        # Load contribution with CORRECT area factor
+        Fe += -2.0 * w * area_factor * N * kappa_q
     
     return Fe
 
@@ -285,7 +276,7 @@ def assemble_system_p3(mesh, kappa_values, use_jax: bool = False):
     # Get quadrature rule (7-point, order 4, exact for degree 5)
     # For SUBPARAMETRIC P3: Jacobian is constant, gradients are degree 2
     # Product ∇Ni·∇Nj is degree 4, so order 4 quadrature is sufficient
-    quad_points, quad_weights = get_gauss_quadrature_triangle(order=4)
+    quad_points, quad_weights = get_gauss_quadrature_triangle(order=5)
     
     # Preallocate sparse matrix storage (COO format)
     # Each element contributes 10×10 = 100 entries
@@ -378,7 +369,7 @@ def apply_boundary_conditions_p3(K, F, mesh):
     K_bc = K.tolil()  # Convert to LIL for efficient modification
     F_bc = F.copy()
     
-    penalty = 1e10
+    penalty = 1e8
     
     for node in boundary:
         K_bc[node, :] = 0
