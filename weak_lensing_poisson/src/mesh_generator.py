@@ -12,7 +12,7 @@ Supports:
 import jax.numpy as jnp
 import numpy as np
 from typing import Tuple, Optional
-from fem_solver import Mesh
+from .fem_solver import Mesh
 
 try:
     import triangle as tr
@@ -345,23 +345,3 @@ def create_rectangular_survey_with_holes(nx: int, ny: int,
         return True
     
     return generate_masked_structured_mesh(nx, ny, mask_func)
-
-
-if __name__ == "__main__":
-    print("Testing mesh generation...")
-    
-    # Structured mesh
-    mesh1 = generate_structured_mesh(10, 10)
-    print(f"Structured mesh: {mesh1.n_nodes} nodes, {mesh1.n_elements} elements")
-    
-    # Masked mesh
-    def circular_mask(x, y):
-        return (x - 0.5)**2 + (y - 0.5)**2 < 0.4**2
-    
-    mesh2 = generate_masked_structured_mesh(20, 20, circular_mask)
-    print(f"Masked mesh: {mesh2.n_nodes} nodes, {len(mesh2.boundary)} boundary nodes")
-    
-    if HAS_TRIANGLE:
-        # Unstructured mesh
-        mesh3 = generate_unstructured_mesh('unit_square', max_area=0.005)
-        print(f"Unstructured mesh: {mesh3.n_nodes} nodes, {mesh3.n_elements} elements")
