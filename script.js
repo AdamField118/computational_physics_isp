@@ -369,7 +369,8 @@ const markdownFiles = [
     "./textbook_notes/chapter_3/exercises.md",
     "./textbook_notes/chapter_4/chapter_4_notes.md",
     "./textbook_notes/chapter_4/chapter_4_exercises.md",
-    "./poisson_2d_fem/web/index.md"
+    "./poisson_2d_fem/web/index.md",
+    "./weak_lensing_poisson/web/index.md"
 ];
 
 function parseFrontMatter(content) {
