@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from p3_mesh_generator import generate_p3_structured_mesh
 from p3_assembly import solve_poisson_p3
+from pathlib import Path
 
 
 # ============================================================================
@@ -223,69 +224,81 @@ def convergence_study_p3(solution: ManufacturedSolution,
 # Visualization
 # ============================================================================
 
-def plot_convergence_p3(results_list, filename='p3_convergence.png'):
+def plot_convergence_p3(results_list, filename='p3_convergence.png', invert_x=True):
     """
-    Plot convergence curves for multiple solutions
-    
-    Args:
-        results_list: List of results dicts from convergence_study_p3
-        filename: Output filename
+    Plot convergence curves for multiple solutions (sorted by h).
+    - sorts by h
+    - draws per-solution reference slopes for both L2 and Linf
     """
     print(f"\nGenerating convergence plot...")
-    
+
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
-    
+
     colors = ['#ff4444', '#4444ff', '#44ff44', '#ffaa44']
     markers = ['o', 's', '^', 'D']
-    
+
     for i, results in enumerate(results_list):
-        h = np.array(results['h'])
-        L2 = np.array(results['L2_errors'])
-        Linf = np.array(results['Linf_errors'])
+        h = np.array(results['h'], dtype=float)
+        L2 = np.array(results['L2_errors'], dtype=float)
+        Linf = np.array(results['Linf_errors'], dtype=float)
         name = results['solution_name']
-        
+
+        # Sort by h ascending (smallest h last) so lines look normal left->right
+        idx = np.argsort(h)
+        h = h[idx]
+        L2 = L2[idx]
+        Linf = Linf[idx]
+
         color = colors[i % len(colors)]
         marker = markers[i % len(markers)]
-        
-        # L² errors
-        ax1.loglog(h, L2, marker=marker, color=color, linewidth=2, 
-                  markersize=8, label=f'{name}')
-        
-        # L∞ errors
+
+        ax1.loglog(h, L2, marker=marker, color=color, linewidth=2,
+                   markersize=8, label=f'{name}')
         ax2.loglog(h, Linf, marker=marker, color=color, linewidth=2,
-                  markersize=8, label=f'{name}')
-    
-    # Reference lines
-    h_ref = np.array([results_list[0]['h'][0], results_list[0]['h'][-1]])
-    
-    # O(h²), O(h³), O(h⁴) reference slopes
-    C = results_list[0]['L2_errors'][0] / h_ref[0]**4
-    
-    ax1.loglog(h_ref, C * h_ref**2, 'k--', linewidth=1.5, alpha=0.5, label='O(h²)')
-    ax1.loglog(h_ref, C * h_ref**3, 'k-.', linewidth=1.5, alpha=0.5, label='O(h³)')
-    ax1.loglog(h_ref, C * h_ref**4, 'k-', linewidth=2, alpha=0.7, label='O(h⁴)')
-    
-    ax2.loglog(h_ref, C * h_ref**2, 'k--', linewidth=1.5, alpha=0.5, label='O(h²)')
-    ax2.loglog(h_ref, C * h_ref**3, 'k-.', linewidth=1.5, alpha=0.5, label='O(h³)')
-    ax2.loglog(h_ref, C * h_ref**4, 'k-', linewidth=2, alpha=0.7, label='O(h⁴)')
-    
+                   markersize=8, label=f'{name}')
+
+        # Per-solution reference slopes (use first L2 value to set constant)
+        h_ref = np.array([h[0], h[-1]])
+        C_L2 = L2[0] / (h[0]**4)   # scale so O(h^4) passes through first point
+        C_Linf = Linf[0] / (h[0]**4)
+
+        # Plot reference slopes on both axes for visual comparison
+        ax1.loglog(h_ref, C_L2 * h_ref**2, 'k--', linewidth=1.0, alpha=0.45)
+        ax1.loglog(h_ref, C_L2 * h_ref**3, 'k-.', linewidth=1.0, alpha=0.45)
+        ax1.loglog(h_ref, C_L2 * h_ref**4, 'k-', linewidth=1.5, alpha=0.6)
+
+        ax2.loglog(h_ref, C_Linf * h_ref**2, 'k--', linewidth=1.0, alpha=0.45)
+        ax2.loglog(h_ref, C_Linf * h_ref**3, 'k-.', linewidth=1.0, alpha=0.45)
+        ax2.loglog(h_ref, C_Linf * h_ref**4, 'k-', linewidth=1.5, alpha=0.6)
+
     # Formatting
+    if invert_x:
+        # Put small h on the right (conventional)
+        ax1.set_xscale("log")
+        ax2.set_xscale("log")
+        ax1.invert_xaxis()
+        ax2.invert_xaxis()
+
     ax1.set_xlabel('Mesh size h', fontsize=13)
     ax1.set_ylabel('L² Error', fontsize=13)
     ax1.set_title('L² Convergence (P3 Elements)', fontsize=14, fontweight='bold')
-    ax1.legend(fontsize=10, loc='best')
+    ax1.legend(fontsize=9, loc='best')
     ax1.grid(True, alpha=0.3, which='both')
-    
+
     ax2.set_xlabel('Mesh size h', fontsize=13)
     ax2.set_ylabel('L∞ Error', fontsize=13)
     ax2.set_title('L∞ Convergence (P3 Elements)', fontsize=14, fontweight='bold')
-    ax2.legend(fontsize=10, loc='best')
+    ax2.legend(fontsize=9, loc='best')
     ax2.grid(True, alpha=0.3, which='both')
-    
-    plt.tight_layout()
-    plt.savefig(filename, dpi=150, bbox_inches='tight')
-    print(f"✅ Saved: {filename}")
+
+    # After plotting
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent   # go up one level from tests/
+    save_path = project_root / filename
+
+    plt.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.close()
+    print(f"Saved plot to: {save_path}")
 
 
 # ============================================================================

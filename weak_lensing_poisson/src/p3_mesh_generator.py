@@ -9,13 +9,14 @@ Generates structured meshes with 10 nodes per triangle:
 Node numbering convention matches p3_shape_functions.py
 """
 
+import jax
+jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 import numpy as np
 from typing import Tuple, Optional
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
-
 
 # ============================================================================
 # P3 Structured Mesh Generation
