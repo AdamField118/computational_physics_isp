@@ -1,41 +1,34 @@
 """
 inverse.py
 ==========
-MAP mass reconstruction: γ_obs → κ_MAP.
+MAP mass reconstruction: gamma_obs -> kappa_MAP.
 
-    κ_MAP = argmin  ‖γ_pred(κ) − γ_obs‖²  +  λ ‖∇κ‖²
+Solves:
+    kappa_MAP = argmin  ||gamma_pred(kappa) - gamma_obs||^2
+                kappa     + lambda * kappa^T R kappa
 
-L-BFGS with a PURE NUMPY adjoint gradient.
+where R is either:
+  - H1 prior (default):     R = K           (penalises ||grad kappa||^2)
+  - Wiener/Matern prior:    R = M + l^2*K   (penalises at correlation length l)
 
-Why not JAX autodiff in the optimizer?
----------------------------------------
-The original _make_obj_and_grad did:
+The Wiener prior is activated by passing wiener_length=l to MAPReconstructor
+or run_comparison. Setting l ~ sigma_lens (the lens scale) gives a prior
+that matches the expected spatial structure of kappa.
 
-    @jax.jit
-    def val_grad(kappa):
-        return self.fwd.grad_fn(kappa, g1, g2)
+Uses L-BFGS with a pure numpy adjoint gradient (no JAX JIT in the loop).
 
-forward.py uses custom_vjp + jax.pure_callback to escape JAX tracing for
-SuperLU solves. Under jax.jit, JAX traces through the custom_vjp but
-pure_callback gradients are silently zeroed out — the compiled gradient
-returns ~0 everywhere. Test 3 passes because validate_gradients calls
-grad_fn in EAGER mode (no jit); the optimizer runs in compiled mode where
-the bug surfaces.
-
-Fix: write the adjoint explicitly in numpy. For our linear forward model
-it's closed-form and equally cheap (2 sparse solves per iteration):
-
-    Forward:  ψ = K⁻¹(−2Mκ),   γ = Sψ
-    Residual: r = γ_pred − γ_obs
-    ∂L/∂κ   = −4 Mᵀ K⁻¹(S1ᵀr1 + S2ᵀr2)  +  2λ K κ
-
-where K is symmetric so K⁻¹ adjoint = K⁻¹, and Kκ is the H¹ regularizer.
+Includes:
+    MAPReconstructor   -- reconstruction pipeline
+    kaiser_squires     -- FFT reference
+    run_comparison     -- benchmark FEM-MAP vs KS, supports adaptive mesh
 """
 
-import sys, os
 import numpy as np
 import scipy.optimize as sopt
 import scipy.fft as sfft
+import jax
+jax.config.update("jax_enable_x64", True)
+import jax.numpy as jnp
 from dataclasses import dataclass
 from typing import Optional, Tuple
 import time
@@ -44,405 +37,455 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.tri as mtri
 
-# Support both package import (from .fem) and direct execution (python src/inverse.py)
 try:
-    from .fem     import FEMOperators, build_operators
+    from .fem     import FEMOperators, build_operators, build_operators_adaptive, build_wiener_regularizer
     from .forward import DifferentiableForward
 except ImportError:
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-    from src.fem     import FEMOperators, build_operators
-    from src.forward import DifferentiableForward
+    from fem      import FEMOperators, build_operators, build_operators_adaptive, build_wiener_regularizer
+    from forward  import DifferentiableForward
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Result container
-# ══════════════════════════════════════════════════════════════════════════════
+# =============================================================================
+# MAP Reconstructor
+# =============================================================================
 
 @dataclass
 class ReconstructionResult:
-    kappa_map   : np.ndarray   # (n_nodes,) reconstructed convergence
-    psi_map     : np.ndarray   # (n_nodes,) reconstructed potential
-    gamma1_pred : np.ndarray   # (n_nodes,) predicted shear (at optimum)
-    gamma2_pred : np.ndarray   # (n_nodes,) predicted shear (at optimum)
-    loss_history: list         # loss at each obj_grad call
-    n_iter      : int          # L-BFGS iterations
-    converged   : bool
-    time_s      : float
+    """Output from MAP reconstruction."""
+    kappa_map    : np.ndarray
+    psi_map      : np.ndarray
+    gamma1_pred  : np.ndarray
+    gamma2_pred  : np.ndarray
+    loss_history : list
+    n_iter       : int
+    converged    : bool
+    time_s       : float
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# MAP Reconstructor
-# ══════════════════════════════════════════════════════════════════════════════
 
 class MAPReconstructor:
     """
-    MAP mass reconstruction: γ_obs → κ_MAP via L-BFGS.
-
-    Uses an explicit numpy adjoint — no JAX/JIT in the optimization loop.
-    JAX is still used in forward.py for Test 3 gradient validation (eager).
+    MAP mass reconstruction using L-BFGS with explicit numpy adjoint.
 
     Parameters
     ----------
     fwd           : DifferentiableForward  (carries ops and lam_reg)
-    maxiter       : int    max L-BFGS iterations (default 500)
-    gtol          : float  gradient-norm convergence tolerance
-    callback_every: int    print every N calls (0 = silent)
+    maxiter       : maximum L-BFGS iterations
+    gtol          : gradient-norm stopping tolerance
+    callback_every: print progress every N function calls (0 = silent)
+    wiener_length : if > 0, use Matern prior R = M + l^2*K instead of R = K.
+                    Recommended: l = sigma_lens ~ 0.5 for a Gaussian lens.
     """
 
-    def __init__(self, fwd: DifferentiableForward,
+    def __init__(self,
+                 fwd: DifferentiableForward,
                  maxiter: int = 500,
-                 gtol: float = 1e-8,
-                 callback_every: int = 20):
+                 gtol: float = 1e-9,
+                 callback_every: int = 50,
+                 wiener_length: float = 0.0):
         self.fwd            = fwd
         self.maxiter        = maxiter
         self.gtol           = gtol
         self.callback_every = callback_every
+        self.wiener_length  = wiener_length
         self.ops            = fwd.ops
 
-    # ── Closed-form numpy adjoint ──────────────────────────────────────────────
+        # Build regularizer matrix R once
+        if wiener_length > 0.0:
+            self._R = build_wiener_regularizer(fwd.ops, wiener_length)
+        else:
+            self._R = fwd.ops.K   # plain H1 prior
+
+    # -------------------------------------------------------------------------
 
     def _make_obj_and_grad(self,
                            gamma1_obs: np.ndarray,
                            gamma2_obs: np.ndarray):
         """
-        Build (loss, grad) callable for scipy.optimize.minimize (jac=True).
+        Returns a callable (kappa -> loss, grad) using the explicit adjoint.
 
-        Forward model is identical to ops.forward():
-            rhs = -2 M κ  (zero at boundary)
-            ψ   = K⁻¹ rhs
-            γ   = S ψ
+        Derivation
+        ----------
+        Forward:     psi = K^{-1}(-2 M kappa),   gamma = S psi
+        Residual:    r   = gamma_pred - gamma_obs
+        Loss:        L   = ||r||^2 + lambda * kappa^T R kappa
+        Adjoint:     adj = K^{-1}(S1^T r1 + S2^T r2)
+        Gradient:    dL/dkappa = -4 M^T adj + 2 lambda R kappa
 
-        Adjoint gradient (derived by chain rule):
-            r   = γ_pred - γ_obs
-            adj = K⁻¹ (S1ᵀ r1 + S2ᵀ r2)   [K symmetric → K⁻ᵀ = K⁻¹]
-            ∂L/∂κ|data = -4 Mᵀ adj
-            ∂L/∂κ|reg  = +2λ K κ            [K = FEM stiffness = ‖∇κ‖² kernel]
+        With R = M + l^2 K (Wiener prior), the gradient regularisation term
+        becomes 2*lambda*(M + l^2*K)*kappa, which suppresses high-frequency
+        noise more aggressively than the plain 2*lambda*K*kappa term.
         """
         ops   = self.ops
-        M, S1, S2 = ops.M, ops.S1, ops.S2
+        M     = ops.M
+        S1    = ops.S1
+        S2    = ops.S2
         K_lu  = ops.K_lu
-        K_mat = ops.K          # sparse stiffness; used for regularizer Kκ
         bnd   = ops.boundary
         lam   = self.fwd.lam_reg
-
-        g1o = np.asarray(gamma1_obs, dtype=np.float64)
-        g2o = np.asarray(gamma2_obs, dtype=np.float64)
+        R     = self._R         # M + l^2*K  or just K
 
         loss_history = []
-        call_count   = [0]
 
-        def obj_grad(kappa_np: np.ndarray):
-            kappa = np.asarray(kappa_np, dtype=np.float64)
+        def obj_grad(kappa_flat):
+            kappa = kappa_flat.reshape(-1)
 
-            # ── Forward ───────────────────────────────────────────────────────
-            rhs = -2.0 * (M @ kappa)
+            # Forward pass
+            rhs = -2.0 * M @ kappa
             rhs[bnd] = 0.0
-            psi  = K_lu.solve(rhs)
-            g1p  = S1 @ psi
-            g2p  = S2 @ psi
+            psi = K_lu.solve(rhs)
+            g1  = S1 @ psi
+            g2  = S2 @ psi
 
-            # ── Loss ──────────────────────────────────────────────────────────
-            r1 = g1p - g1o
-            r2 = g2p - g2o
+            # Residuals
+            r1 = g1 - gamma1_obs
+            r2 = g2 - gamma2_obs
+
+            # Data loss
             data_loss = float(np.dot(r1, r1) + np.dot(r2, r2))
 
-            Kk       = K_mat @ kappa
-            reg_loss = float(np.dot(kappa, Kk))
-            loss     = data_loss + lam * reg_loss
+            # Regularisation loss:  lambda * kappa^T R kappa
+            Rk       = R @ kappa
+            reg_loss = float(lam * np.dot(kappa, Rk))
 
+            loss = data_loss + reg_loss
             loss_history.append(loss)
-            call_count[0] += 1
-            if self.callback_every > 0 and call_count[0] % self.callback_every == 0:
-                print(f"  call {call_count[0]:4d}  loss = {loss:.6e}")
 
-            # ── Adjoint ───────────────────────────────────────────────────────
-            # ∂(‖r‖²)/∂κ  via  A = S K⁻¹(−2M),  Aᵀ = −2Mᵀ K⁻¹ Sᵀ
+            # Adjoint solve
             rhs_adj = S1.T @ r1 + S2.T @ r2
             rhs_adj[bnd] = 0.0
-            adj  = K_lu.solve(rhs_adj)
-            grad = -4.0 * (M.T @ adj) + 2.0 * lam * Kk
+            adj = K_lu.solve(rhs_adj)
+
+            # Gradient: data part + regularisation part
+            grad = -4.0 * (M.T @ adj) + 2.0 * lam * Rk
 
             return loss, grad.astype(np.float64)
 
         return obj_grad, loss_history
 
-    # ── Reconstruction ─────────────────────────────────────────────────────────
+    # -------------------------------------------------------------------------
 
     def reconstruct(self,
                     gamma1_obs: np.ndarray,
                     gamma2_obs: np.ndarray,
                     kappa_init: Optional[np.ndarray] = None,
+                    mask: Optional[np.ndarray] = None,
                     verbose: bool = True) -> Tuple[np.ndarray, ReconstructionResult]:
+        """
+        Run MAP reconstruction.
 
-        n = self.ops.n_nodes
-        if kappa_init is None:
-            kappa_init = np.zeros(n)
+        Args:
+            gamma1_obs, gamma2_obs : observed shear (n_nodes,)
+            kappa_init             : initial guess (zeros if None)
+            mask                   : boolean array; masked nodes set to 0 in obs
+            verbose                : print header and convergence summary
 
-        obj_grad, loss_history = self._make_obj_and_grad(gamma1_obs, gamma2_obs)
+        Returns:
+            kappa_map : (n_nodes,) MAP estimate
+            result    : ReconstructionResult dataclass
+        """
+        ops    = self.ops
+        n      = ops.n_nodes
 
-        # Sanity-check gradient before handing to L-BFGS
-        loss0, grad0 = obj_grad(kappa_init.copy())
-        grad_norm0   = np.linalg.norm(grad0)
-        loss_history.clear()
+        g1_obs = gamma1_obs.copy()
+        g2_obs = gamma2_obs.copy()
+        if mask is not None:
+            g1_obs[mask] = 0.0
+            g2_obs[mask] = 0.0
+
+        kappa0 = np.zeros(n) if kappa_init is None else kappa_init.copy()
+
+        obj_grad, loss_history = self._make_obj_and_grad(g1_obs, g2_obs)
 
         if verbose:
+            prior_name = (f"Wiener (l={self.wiener_length:.2f})"
+                          if self.wiener_length > 0 else "H1 (K)")
+            loss0, grad0 = obj_grad(kappa0)
             print("=" * 60)
-            print("MAP Reconstruction  (L-BFGS, numpy adjoint)")
+            print(f"MAP Reconstruction  (L-BFGS, numpy adjoint)")
             print(f"  n_nodes   = {n}")
-            print(f"  λ_reg     = {self.fwd.lam_reg:.2e}")
+            print(f"  lambda    = {self.fwd.lam_reg:.2e}")
+            print(f"  prior     = {prior_name}")
             print(f"  maxiter   = {self.maxiter}  |  gtol = {self.gtol:.0e}")
-            print(f"  loss(κ=0) = {loss0:.4e}  |  ‖∇L‖(κ=0) = {grad_norm0:.4e}")
+            print(f"  loss(k=0) = {loss0:.4e}  |  ||grad||(k=0) = {np.linalg.norm(grad0):.4e}")
             print("=" * 60)
+            loss_history.clear()
 
-        t0 = time.perf_counter()
+        call_counter = [0]
+        cb_every = self.callback_every
 
-        result_opt = sopt.minimize(
-            fun     = obj_grad,
-            x0      = kappa_init.copy(),
-            method  = 'L-BFGS-B',
-            jac     = True,
-            options = {
-                'maxiter': self.maxiter,
-                'gtol'   : self.gtol,
-                'ftol'   : 1e-30,   # never stop on f-reduction; gtol drives convergence
-                'maxls'  : 100,
-                'maxcor' : 20,
-                'iprint' : -1,
-            },
+        def callback(kappa_flat):
+            call_counter[0] += 1
+            if cb_every > 0 and call_counter[0] % cb_every == 0 and loss_history:
+                print(f"  call {call_counter[0]:4d}  loss = {loss_history[-1]:.6e}")
+
+        t0  = time.perf_counter()
+        res = sopt.minimize(
+            obj_grad, kappa0,
+            method='L-BFGS-B',
+            jac=True,
+            callback=callback,
+            options={
+                'maxiter' : self.maxiter,
+                'gtol'    : self.gtol,
+                'ftol'    : 1e-30,
+                'maxcor'  : 20,
+                'disp'    : False,
+            }
         )
+        wall = time.perf_counter() - t0
 
-        elapsed   = time.perf_counter() - t0
-        kappa_map = result_opt.x
-
-        # Recompute final fields
-        rhs          = -2.0 * (self.ops.M @ kappa_map)
-        rhs[self.ops.boundary] = 0.0
-        psi_map      = self.ops.K_lu.solve(rhs)
-        g1p          = np.array(self.ops.S1 @ psi_map)
-        g2p          = np.array(self.ops.S2 @ psi_map)
+        kappa_map = res.x
+        psi_map   = ops.psi_from_kappa(kappa_map)
+        g1p, g2p  = ops.shear_from_psi(psi_map)
 
         if verbose:
-            print(f"\n  Converged : {result_opt.success}")
-            print(f"  Message   : {result_opt.message}")
-            print(f"  Iterations: {result_opt.nit}")
-            print(f"  Fcn calls : {result_opt.nfev}")
-            print(f"  Final loss: {result_opt.fun:.6e}")
-            print(f"  Wall time : {elapsed:.2f} s")
-            print(f"  max|κ_MAP|: {np.abs(kappa_map).max():.4f}")
+            print(f"\n  Converged : {res.success}")
+            print(f"  Message   : {res.message}")
+            print(f"  Iterations: {res.nit}")
+            print(f"  Fcn calls : {res.nfev}")
+            print(f"  Final loss: {res.fun:.6e}")
+            print(f"  Wall time : {wall:.2f} s")
+            print(f"  max|kappa|: {np.abs(kappa_map).max():.4f}")
             print("=" * 60)
 
-        return kappa_map, ReconstructionResult(
-            kappa_map    = kappa_map,
-            psi_map      = psi_map,
-            gamma1_pred  = g1p,
-            gamma2_pred  = g2p,
-            loss_history = loss_history,
-            n_iter       = result_opt.nit,
-            converged    = result_opt.success,
-            time_s       = elapsed,
+        result = ReconstructionResult(
+            kappa_map   = kappa_map,
+            psi_map     = psi_map,
+            gamma1_pred = g1p,
+            gamma2_pred = g2p,
+            loss_history= loss_history,
+            n_iter      = res.nit,
+            converged   = res.success,
+            time_s      = wall,
         )
+        return kappa_map, result
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Kaiser-Squires (FFT) reference method
-# ══════════════════════════════════════════════════════════════════════════════
+# =============================================================================
+# Kaiser-Squires reference
+# =============================================================================
 
-def kaiser_squires(gamma1_grid: np.ndarray,
-                   gamma2_grid: np.ndarray) -> np.ndarray:
+def kaiser_squires(gamma1: np.ndarray, gamma2: np.ndarray,
+                   nodes: np.ndarray,
+                   grid_size: int = 64) -> np.ndarray:
     """
-    Kaiser-Squires mass reconstruction on a regular periodic grid.
+    FFT-based Kaiser-Squires convergence reconstruction.
 
-        κ̂(k) = [(k₁²−k₂²) γ̂₁ + 2k₁k₂ γ̂₂] / |k|²
+    Interpolates the irregular FEM-node shear onto a uniform grid, applies
+    the KS Fourier kernel, then interpolates back to FEM nodes.
     """
-    ny, nx = gamma1_grid.shape
-    kx = sfft.fftfreq(nx) * 2 * np.pi
-    ky = sfft.fftfreq(ny) * 2 * np.pi
+    from scipy.interpolate import griddata
+
+    xmin, xmax = nodes[:, 0].min(), nodes[:, 0].max()
+    ymin, ymax = nodes[:, 1].min(), nodes[:, 1].max()
+
+    xi = np.linspace(xmin, xmax, grid_size)
+    yi = np.linspace(ymin, ymax, grid_size)
+    XX, YY = np.meshgrid(xi, yi)
+
+    g1_grid = griddata(nodes, gamma1, (XX, YY), method='linear', fill_value=0.0)
+    g2_grid = griddata(nodes, gamma2, (XX, YY), method='linear', fill_value=0.0)
+
+    G1k = sfft.fft2(g1_grid)
+    G2k = sfft.fft2(g2_grid)
+
+    kx = sfft.fftfreq(grid_size, d=(xmax - xmin) / grid_size) * 2 * np.pi
+    ky = sfft.fftfreq(grid_size, d=(ymax - ymin) / grid_size) * 2 * np.pi
     KX, KY = np.meshgrid(kx, ky)
-    K2 = KX**2 + KY**2;  K2[0, 0] = 1.0
+    k2 = KX**2 + KY**2
+    k2[0, 0] = 1.0
 
-    kappa_hat = ((KX**2 - KY**2) * sfft.fft2(gamma1_grid)
-                 + 2 * KX * KY * sfft.fft2(gamma2_grid)) / K2
-    kappa_hat[0, 0] = 0.0
-    return np.real(sfft.ifft2(kappa_hat))
+    Dk = (KX**2 - KY**2) / k2
+    Ok = 2.0 * KX * KY / k2
+
+    Kappak = Dk * G1k + Ok * G2k
+    kappa_grid = np.real(sfft.ifft2(Kappak))
+
+    kappa_nodes = griddata(
+        np.column_stack([XX.ravel(), YY.ravel()]),
+        kappa_grid.ravel(),
+        nodes,
+        method='linear',
+        fill_value=0.0,
+    )
+    return kappa_nodes
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Synthetic benchmark
-# ══════════════════════════════════════════════════════════════════════════════
-
-def _gaussian_kappa(x, y, A=1.0, sigma=0.5, cx=0., cy=0.):
-    return A * np.exp(-((x-cx)**2 + (y-cy)**2) / (2*sigma**2))
-
-
-def _gaussian_shear_exact(x, y, A=1.0, sigma=0.5, cx=0., cy=0.):
-    """Analytic shear for a Gaussian convergence."""
-    dx, dy = x-cx, y-cy
-    k  = A * np.exp(-(dx**2+dy**2)/(2*sigma**2))
-    g1 = k * (dy**2 - dx**2) / (2*sigma**2)
-    g2 = -k * dx * dy / sigma**2
-    return g1, g2
-
+# =============================================================================
+# Benchmark: FEM-MAP vs Kaiser-Squires
+# =============================================================================
 
 def run_comparison(nx: int = 20,
-                   noise_level: float = 0.05,
+                   noise_level: float = 0.10,
                    lam_reg: float = 1e-2,
-                   domain: tuple = (-2.5, 2.5, -2.5, 2.5),
-                   A: float = 1.0, sigma: float = 0.5,
                    apply_mask: bool = False,
-                   mask_center: tuple = (0.8, 0.8),
-                   mask_radius: float = 0.4,
-                   verbose: bool = True) -> dict:
+                   mask_center: Tuple[float, float] = (0.0, 0.0),
+                   mask_radius: float = 0.5,
+                   wiener_length: float = 0.0,
+                   use_adaptive_mesh: bool = False,
+                   refine_factor: int = 3,
+                   sigma_lens: float = 0.5,
+                   A_lens: float = 1.0,
+                   xmin: float = -2.5, xmax: float = 2.5,
+                   ymin: float = -2.5, ymax: float = 2.5):
+    """
+    Benchmark FEM-MAP vs Kaiser-Squires on a synthetic Gaussian lens survey.
 
-    xmin, xmax, ymin, ymax = domain
+    New parameters vs original:
+        wiener_length    : if > 0, use Matern prior R = M + l^2*K (recommend 0.5)
+        use_adaptive_mesh: if True, refine mesh near mask boundary
+        refine_factor    : adaptive refinement factor (3 = 3x finer near mask)
 
-    if verbose:
-        print("\n" + "═"*60)
-        print(f"FEM-MAP vs Kaiser-Squires Benchmark")
-        print(f"  {nx}×{nx} P3 mesh  |  noise={noise_level:.0%}  |  λ={lam_reg:.0e}")
-        print("═"*60)
+    These can be combined: adaptive mesh + Wiener prior is the full upgrade.
+    """
+    # ---- build mesh / operators -------------------------------------------
+    prior_tag = f"Wiener(l={wiener_length})" if wiener_length > 0 else "H1"
+    mesh_tag  = f"adaptive(x{refine_factor})" if use_adaptive_mesh else "structured"
 
-    ops = build_operators(nx, nx, xmin, xmax, ymin, ymax, verbose=verbose)
-    fwd = DifferentiableForward(ops, lam_reg=lam_reg)
-    rec = MAPReconstructor(fwd, maxiter=500, gtol=1e-9,
-                           callback_every=50 if verbose else 0)
+    print("=" * 60)
+    print(f"FEM-MAP vs Kaiser-Squires Benchmark")
+    print(f"  {nx}x{nx} P3 {mesh_tag}  |  noise={noise_level*100:.0f}%  "
+          f"|  lambda={lam_reg:.0e}  |  prior={prior_tag}")
+    print("=" * 60)
+
+    if use_adaptive_mesh and apply_mask:
+        ops = build_operators_adaptive(
+            nx, nx, xmin, xmax, ymin, ymax,
+            mask_center=mask_center,
+            mask_radius=mask_radius,
+            refine_factor=refine_factor,
+            verbose=True,
+        )
+    else:
+        ops = build_operators(nx, nx, xmin, xmax, ymin, ymax, verbose=True)
 
     nodes = np.array(ops.mesh.nodes)
-    x, y  = nodes[:, 0], nodes[:, 1]
+    fwd   = DifferentiableForward(ops, lam_reg=lam_reg)
 
-    kappa_true           = _gaussian_kappa(x, y, A, sigma)
-    #gamma1_true, gamma2_true = _gaussian_shear_exact(x, y, A, sigma)
-    gamma1_true, gamma2_true = ops.forward(kappa_true)
+    # ---- true kappa (Gaussian lens) ---------------------------------------
+    r2        = nodes[:, 0]**2 + nodes[:, 1]**2
+    kappa_true = A_lens * np.exp(-r2 / (2 * sigma_lens**2))
 
-    np.random.seed(42)
-    ns = noise_level * np.max(np.abs(gamma1_true))
-    g1_obs = gamma1_true + np.random.randn(len(x)) * ns
-    g2_obs = gamma2_true + np.random.randn(len(x)) * ns
+    # ---- self-consistent FEM observations (no analytic mismatch) ---------
+    g1_true, g2_true = ops.forward(kappa_true)
 
-    mask_nodes = np.zeros(len(x), dtype=bool)
+    # ---- add noise --------------------------------------------------------
+    rng   = np.random.default_rng(42)
+    noise = noise_level * np.std(np.sqrt(g1_true**2 + g2_true**2))
+    g1_obs = g1_true + rng.normal(0, noise, g1_true.shape)
+    g2_obs = g2_true + rng.normal(0, noise, g2_true.shape)
+
+    # ---- mask -------------------------------------------------------------
+    mask = None
     if apply_mask:
-        mcx, mcy = mask_center
-        mask_nodes = (x-mcx)**2 + (y-mcy)**2 < mask_radius**2
-        g1_obs[mask_nodes] = 0.0
-        g2_obs[mask_nodes] = 0.0
-        if verbose:
-            print(f"  Masked {mask_nodes.sum()} nodes "
-                  f"({100*mask_nodes.mean():.1f}%)\n")
+        r      = np.sqrt((nodes[:, 0] - mask_center[0])**2 +
+                          (nodes[:, 1] - mask_center[1])**2)
+        mask   = r < mask_radius
+        g1_obs[mask] = 0.0
+        g2_obs[mask] = 0.0
+        print(f"\n  Masked {mask.sum()} nodes ({100*mask.mean():.1f}%)")
 
-    kappa_map, result = rec.reconstruct(g1_obs, g2_obs, verbose=verbose)
+    # ---- FEM-MAP ----------------------------------------------------------
+    rec = MAPReconstructor(fwd, maxiter=500, gtol=1e-9, callback_every=50,
+                           wiener_length=wiener_length)
+    kappa_map, result = rec.reconstruct(g1_obs, g2_obs, verbose=True)
 
-    # Kaiser-Squires on regular grid
-    from scipy.interpolate import griddata
-    n_ks = nx + 1
-    xi   = np.linspace(xmin, xmax, n_ks)
-    yi   = np.linspace(ymin, ymax, n_ks)
-    XI, YI = np.meshgrid(xi, yi)
-    pts  = np.column_stack([x, y])
-    g1g  = griddata(pts, g1_obs, (XI,YI), method='linear', fill_value=0.)
-    g2g  = griddata(pts, g2_obs, (XI,YI), method='linear', fill_value=0.)
-    ks_g = kaiser_squires(g1g, g2g)
-    kappa_ks = griddata(np.column_stack([XI.ravel(), YI.ravel()]),
-                        ks_g.ravel(), pts, method='linear', fill_value=0.)
+    # ---- Kaiser-Squires ---------------------------------------------------
+    kappa_ks = kaiser_squires(g1_obs, g2_obs, nodes)
 
-    l2_map = np.sqrt(np.mean((kappa_map - kappa_true)**2))
-    l2_ks  = np.sqrt(np.mean((kappa_ks  - kappa_true)**2))
+    # ---- metrics ----------------------------------------------------------
+    l2_map = float(np.sqrt(np.mean((kappa_map  - kappa_true)**2)))
+    l2_ks  = float(np.sqrt(np.mean((kappa_ks   - kappa_true)**2)))
+    improv = 100.0 * (l2_ks - l2_map) / l2_ks
 
-    if verbose:
-        print(f"\n{'─'*60}")
-        print(f"Reconstruction quality  (L2 error vs truth)")
-        print(f"  FEM-MAP  : {l2_map:.4f}")
-        print(f"  K-S      : {l2_ks:.4f}")
-        impr = (l2_ks - l2_map) / l2_ks * 100
-        print(f"  Improvement: {impr:+.1f}%  (+ = FEM-MAP better)")
-        print(f"{'─'*60}\n")
+    print(f"\n{'─'*60}")
+    print(f"Reconstruction quality  (L2 error vs truth)")
+    print(f"  FEM-MAP  : {l2_map:.4f}")
+    print(f"  K-S      : {l2_ks:.4f}")
+    print(f"  Improvement: {improv:+.1f}%  (+ = FEM-MAP better)")
+    print(f"{'─'*60}\n")
 
-    _plot_comparison(ops, nodes, kappa_true, kappa_map, kappa_ks,
-                     result, l2_map, l2_ks, noise_level, apply_mask,
-                     mask_nodes, fname="map_reconstruction.png")
+    # ---- plot -------------------------------------------------------------
+    _plot_comparison(nodes, kappa_true, kappa_map, kappa_ks,
+                     result, l2_map, l2_ks,
+                     noise_level, apply_mask, mask)
 
-    return dict(kappa_true=kappa_true, kappa_map=kappa_map, kappa_ks=kappa_ks,
-                l2_map=l2_map, l2_ks=l2_ks, ops=ops, result=result)
+    return kappa_map, kappa_ks, kappa_true, result
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Plotting
-# ══════════════════════════════════════════════════════════════════════════════
+def _plot_comparison(nodes, kappa_true, kappa_map, kappa_ks,
+                     result, l2_map, l2_ks,
+                     noise_level, apply_mask, mask):
+    """5-panel comparison figure."""
+    triang = mtri.Triangulation(nodes[:, 0], nodes[:, 1])
 
-def _plot_comparison(ops, nodes, kappa_true, kappa_map, kappa_ks,
-                     result, l2_map, l2_ks, noise_level, apply_mask,
-                     mask_nodes, fname="map_reconstruction.png"):
+    tag = f"noise={noise_level*100:.0f}%"
+    if apply_mask:
+        tag += " + mask"
 
-    plt.style.use('dark_background')
-    fig, axes = plt.subplots(1, 5, figsize=(22, 5))
-    fig.patch.set_facecolor('#0e0e0e')
+    fig, axes = plt.subplots(1, 5, figsize=(25, 5),
+                             facecolor='#1a1a1a')
+    fig.suptitle(f"MAP Mass Reconstruction  |  {tag}",
+                 color='white', fontsize=14, y=1.02)
 
-    el  = np.array(ops.mesh.elements)[:, :3]
-    tri = mtri.Triangulation(nodes[:, 0], nodes[:, 1], triangles=el)
-    vmax = np.percentile(kappa_true, 99)
+    panels = [
+        (kappa_true,            "kappa truth",               'hot',    None),
+        (kappa_map,             f"kappa FEM-MAP\nL2={l2_map:.3f}", 'hot', None),
+        (kappa_ks,              f"kappa Kaiser-Squires\nL2={l2_ks:.3f}", 'RdYlGn', None),
+        (kappa_map - kappa_true,"MAP residual",              'RdBu_r', 0.35),
+    ]
 
-    def panel(ax, data, title, cmap='hot', sym=False, vmax_=None):
+    for ax, (data, title, cmap, sym) in zip(axes[:4], panels):
         ax.set_facecolor('#1a1a1a')
-        v    = vmax_ if vmax_ is not None else (
-               np.percentile(np.abs(data[np.isfinite(data)]), 98) if sym
-               else np.percentile(data[np.isfinite(data)], 99))
-        vmin = -v if sym else 0
-        tcf  = ax.tricontourf(tri, data, levels=40, cmap=cmap,
-                              vmin=vmin, vmax=v, extend='both')
-        fig.colorbar(tcf, ax=ax, fraction=0.04, pad=0.02
-                     ).ax.tick_params(labelsize=7, colors='#aaa')
-        ax.set_title(title, fontsize=10, color='#ddd', pad=5)
+        vmax = sym if sym else np.percentile(np.abs(data), 99)
+        vmin = -vmax if sym else 0
+        tc = ax.tripcolor(triang, data, cmap=cmap, vmin=vmin, vmax=vmax,
+                          shading='gouraud')
+        plt.colorbar(tc, ax=ax, fraction=0.046, pad=0.04)
+        if apply_mask and mask is not None:
+            mx = nodes[mask, 0];  my = nodes[mask, 1]
+            ax.scatter(mx, my, c='cyan', s=1, alpha=0.3)
+        ax.set_title(title, color='white', fontsize=10)
         ax.set_aspect('equal')
-        ax.tick_params(labelsize=7, colors='#888')
+        ax.tick_params(colors='white')
+        for sp in ax.spines.values():
+            sp.set_edgecolor('#444')
 
-    panel(axes[0], kappa_true,              'κ  truth',                  vmax_=vmax)
-    panel(axes[1], kappa_map,               f'κ  FEM-MAP\nL2={l2_map:.3f}',  vmax_=vmax)
-    panel(axes[2], kappa_ks,                f'κ  Kaiser-Squires\nL2={l2_ks:.3f}', vmax_=vmax)
-    panel(axes[3], kappa_map - kappa_true,  'MAP residual',  'RdBu_r', sym=True)
+    # Convergence curve
+    ax5 = axes[4]
+    ax5.set_facecolor('#1a1a1a')
+    if result.loss_history:
+        ax5.semilogy(result.loss_history, color='#00e676', lw=1.5)
+    ax5.set_xlabel('L-BFGS call', color='white', fontsize=9)
+    ax5.set_ylabel('Loss', color='white', fontsize=9)
+    ax5.set_title('Convergence', color='white', fontsize=10)
+    ax5.tick_params(colors='white')
+    ax5.grid(True, alpha=0.2)
+    for sp in ax5.spines.values():
+        sp.set_edgecolor('#444')
 
-    if len(result.loss_history) > 5:
-        ax5 = axes[4]
-        ax5.set_facecolor('#1a1a1a')
-        ax5.semilogy(result.loss_history, color='#00ff80', lw=1.5)
-        ax5.set_xlabel('L-BFGS call', fontsize=9, color='#aaa')
-        ax5.set_ylabel('Loss', fontsize=9, color='#aaa')
-        ax5.set_title('Convergence', fontsize=10, color='#ddd')
-        ax5.tick_params(labelsize=7, colors='#888')
-        ax5.grid(True, alpha=0.25)
-    else:
-        panel(axes[4], kappa_ks - kappa_true, 'KS residual', 'RdBu_r', sym=True)
-
-    fig.suptitle(f"MAP Mass Reconstruction  |  noise={noise_level:.0%}"
-                 f"{'  + mask' if apply_mask else ''}",
-                 fontsize=13, color='#eee', y=1.01)
     plt.tight_layout()
-    plt.savefig(fname, dpi=160, facecolor='#0e0e0e', bbox_inches='tight')
-    print(f"✅  Saved: {fname}")
+    plt.savefig('map_reconstruction.png', dpi=150, bbox_inches='tight',
+                facecolor='#1a1a1a')
+    print("Saved: map_reconstruction.png")
     plt.close()
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # Entry point
-# ══════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 
 if __name__ == "__main__":
-    print("\n" + "★"*55)
-    print("  DEMO 1: Noiseless reconstruction (sanity check)")
-    print("★"*55)
-    out1 = run_comparison(nx=20, noise_level=0.0,  lam_reg=1e-5)
-
-    print("\n" + "★"*55)
-    print("  DEMO 2: 10% noise  (FEM-MAP vs Kaiser-Squires)")
-    print("★"*55)
-    out2 = run_comparison(nx=20, noise_level=0.10, lam_reg=1e-2)
-
-    print("\n" + "★"*55)
-    print("  DEMO 3: 10% noise + star mask")
-    print("★"*55)
-    out3 = run_comparison(nx=20, noise_level=0.10, lam_reg=1e-2,
-                          apply_mask=True, mask_center=(0.6, 0.6), mask_radius=0.5)
-
-    print("\n" + "═"*55)
-    print("Summary")
-    print("═"*55)
-    for lbl, out in [("Noiseless", out1), ("10% noise", out2), ("10%+mask", out3)]:
-        print(f"  {lbl:20s}  MAP={out['l2_map']:.4f}  KS={out['l2_ks']:.4f}")
-    print("═"*55)
+    import sys
+    # Default: show effect of both improvements together
+    run_comparison(
+        nx=20,
+        noise_level=0.10,
+        lam_reg=2e-2,
+        apply_mask=True,
+        mask_center=(0.0, 0.0),
+        mask_radius=0.6,
+        wiener_length=0.5,           # Matern prior with l = sigma_lens
+        use_adaptive_mesh=True,      # refine near mask boundary
+        refine_factor=3,
+    )
