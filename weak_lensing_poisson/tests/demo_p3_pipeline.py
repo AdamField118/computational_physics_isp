@@ -136,9 +136,23 @@ def compute_shear_p3(mesh, psi: np.ndarray,
         for local_i in range(10):
             # H_ref[local_i]: (10, 2, 2) — all shape-fn Hessians at node local_i
             #
-            # Transform to physical coords:
-            #   H_phys[n, a, b] = Σ_{j,k} A[a,j] A[b,k] H_ref[local_i, n, j, k]
-            H_phys = np.einsum('aj,bk,njk->nab', A, A, H_ref[local_i])  # (10,2,2)
+            # Transform reference Hessians to physical coords.
+            #
+            # The chain rule for second derivatives (affine map, so J constant):
+            #
+            #   ∂²N/∂x_a ∂x_b = Σ_{j,k} (∂ref_j/∂x_a)(∂ref_k/∂x_b) ∂²N/∂ref_j ∂ref_k
+            #
+            # A = J_inv.T = J_correct^{-1}, so A[j, a] = ∂ref_j/∂x_a.
+            #
+            # Correct einsum: H_phys[n,a,b] = Σ_{j,k} A[j,a] A[k,b] H_ref[n,j,k]
+            #                               ↑ 'ja,kb' — note index ORDER matters!
+            #
+            # BUG WAS: 'aj,bk,njk->nab' which uses A[a,j] instead of A[j,a].
+            # A is NOT symmetric for upper triangles (skewed J), so this was wrong
+            # for half the elements. Diagonal lower triangles have symmetric A,
+            # hiding the bug there. The fix is simply swapping the first two
+            # subscripts in the einsum string.
+            H_phys = np.einsum('ja,kb,njk->nab', A, A, H_ref[local_i])  # (10,2,2)
 
             psi_xx = psi_e @ H_phys[:, 0, 0]
             psi_yy = psi_e @ H_phys[:, 1, 1]
