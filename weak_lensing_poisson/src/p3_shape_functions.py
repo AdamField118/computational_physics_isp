@@ -15,6 +15,7 @@ References:
 """
 
 import jax
+jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 from jax import jit
 from typing import Tuple
@@ -89,7 +90,6 @@ def compute_p3_shape_functions(xi: float, eta: float) -> jnp.ndarray:
     
     return jnp.array([N0, N1, N2, N3, N4, N5, N6, N7, N8, N9])
 
-
 # ============================================================================
 # P3 Shape Function Gradients (First Derivatives)
 # ============================================================================
@@ -97,137 +97,14 @@ def compute_p3_shape_functions(xi: float, eta: float) -> jnp.ndarray:
 @jit
 def compute_p3_shape_gradients_reference(xi: float, eta: float) -> jnp.ndarray:
     """
-    Compute gradients of P3 shape functions w.r.t. reference coordinates
-    
-    Returns ∂Nᵢ/∂ξ and ∂Nᵢ/∂η for each shape function
-    
-    These are needed for:
-    1. Stiffness matrix assembly (∇N dot products)
-    2. Jacobian transformations to physical coordinates
-    
-    Args:
-        xi, eta: Point in reference triangle
-        
-    Returns:
-        (10, 2) array where row i is [∂Nᵢ/∂ξ, ∂Nᵢ/∂η]
+    Returns (10,2) array of ∂N_i/∂(xi,eta) evaluated at (xi,eta).
+    Implemented by JAX jacobian of compute_p3_shape_functions to guarantee consistency.
     """
-    # Barycentric coordinates
-    lam1 = 1.0 - xi - eta
-    lam2 = xi
-    lam3 = eta
-    
-    # Gradients of barycentric coordinates
-    # ∂λ₁/∂ξ = -1,  ∂λ₁/∂η = -1
-    # ∂λ₂/∂ξ =  1,  ∂λ₂/∂η =  0
-    # ∂λ₃/∂ξ =  0,  ∂λ₃/∂η =  1
-    
-    # ========================================================================
-    # VERTEX NODES - Using chain rule on Nᵢ = ½λᵢ(3λᵢ-1)(3λᵢ-2)
-    # ========================================================================
-    
-    # Node 0: N₀ = ½λ₁(3λ₁-1)(3λ₁-2)
-    # ∂N₀/∂λ₁ = ½[(3λ₁-1)(3λ₁-2) + λ₁·3(3λ₁-2) + λ₁(3λ₁-1)·3]
-    #          = ½[(3λ₁-1)(3λ₁-2) + 3λ₁(3λ₁-2) + 3λ₁(3λ₁-1)]
-    #          = ½[27λ₁² - 18λ₁ + 2]
-    dN0_dlam1 = 0.5 * (27.0*lam1**2 - 18.0*lam1 + 2.0)
-    dN0_dxi = -dN0_dlam1  # Chain rule: ∂λ₁/∂ξ = -1
-    dN0_deta = -dN0_dlam1
-    
-    # Node 1: N₁ = ½λ₂(3λ₂-1)(3λ₂-2)
-    dN1_dlam2 = 0.5 * (27.0*lam2**2 - 18.0*lam2 + 2.0)
-    dN1_dxi = dN1_dlam2   # ∂λ₂/∂ξ = 1
-    dN1_deta = 0.0        # ∂λ₂/∂η = 0
-    
-    # Node 2: N₂ = ½λ₃(3λ₃-1)(3λ₃-2)
-    dN2_dlam3 = 0.5 * (27.0*lam3**2 - 18.0*lam3 + 2.0)
-    dN2_dxi = 0.0         # ∂λ₃/∂ξ = 0
-    dN2_deta = dN2_dlam3  # ∂λ₃/∂η = 1
-    
-    # ========================================================================
-    # EDGE NODES - Using product rule
-    # ========================================================================
-    
-    # Node 3: N₃ = (9/2)λ₁λ₂(3λ₁-1)
-    # ∂N₃/∂ξ = (9/2)[∂λ₁/∂ξ·λ₂(3λ₁-1) + λ₁·∂λ₂/∂ξ·(3λ₁-1) + λ₁λ₂·3·∂λ₁/∂ξ]
-    dN3_dxi = (9.0/2.0) * (
-        -lam2 * (3.0*lam1 - 1.0) + 
-        lam1 * (3.0*lam1 - 1.0) + 
-        lam1 * lam2 * 3.0 * (-1.0)
-    )
-    dN3_deta = (9.0/2.0) * (
-        -lam2 * (3.0*lam1 - 1.0) + 
-        lam1 * lam2 * 3.0 * (-1.0)
-    )
-    
-    # Node 4: N₄ = (9/2)λ₁λ₂(3λ₂-1)
-    dN4_dxi = (9.0/2.0) * (
-        -lam2 * (3.0*lam2 - 1.0) + 
-        lam1 * (3.0*lam2 - 1.0) + 
-        lam1 * lam2 * 3.0
-    )
-    dN4_deta = (9.0/2.0) * (
-        -lam2 * (3.0*lam2 - 1.0)
-    )
-    
-    # Node 5: N₅ = (9/2)λ₂λ₃(3λ₂-1)
-    dN5_dxi = (9.0/2.0) * (
-        lam3 * (3.0*lam2 - 1.0) + 
-        lam2 * lam3 * 3.0
-    )
-    dN5_deta = (9.0/2.0) * (
-        lam2 * (3.0*lam2 - 1.0)
-    )
-    
-    # Node 6: N₆ = (9/2)λ₂λ₃(3λ₃-1)
-    dN6_dxi = (9.0/2.0) * (
-        lam3 * (3.0*lam3 - 1.0)
-    )
-    dN6_deta = (9.0/2.0) * (
-        lam2 * (3.0*lam3 - 1.0) + 
-        lam2 * lam3 * 3.0
-    )
-    
-    # Node 7: N₇ = (9/2)λ₃λ₁(3λ₃-1)
-    dN7_dxi = (9.0/2.0) * (
-        -lam3 * (3.0*lam3 - 1.0)
-    )
-    dN7_deta = (9.0/2.0) * (
-        lam1 * (3.0*lam3 - 1.0) + 
-        -lam3 * (3.0*lam3 - 1.0) + 
-        lam3 * lam1 * 3.0
-    )
-    
-    # Node 8: N₈ = (9/2)λ₃λ₁(3λ₁-1)
-    dN8_dxi = (9.0/2.0) * (
-        lam3 * (-1.0) * (3.0*lam1 - 1.0) + 
-        lam3 * lam1 * 3.0 * (-1.0)
-    )
-    dN8_deta = (9.0/2.0) * (
-        lam1 * (3.0*lam1 - 1.0) + 
-        lam3 * (-1.0) * (3.0*lam1 - 1.0) + 
-        lam3 * lam1 * 3.0 * (-1.0)
-    )
-    
-    # ========================================================================
-    # INTERIOR NODE - N₉ = 27λ₁λ₂λ₃
-    # ========================================================================
-    # ∂N₉/∂ξ = 27[∂λ₁/∂ξ·λ₂λ₃ + λ₁·∂λ₂/∂ξ·λ₃ + λ₁λ₂·∂λ₃/∂ξ]
-    dN9_dxi = 27.0 * (-lam2*lam3 + lam1*lam3)
-    dN9_deta = 27.0 * (-lam2*lam3 + lam1*lam2)
-    
-    # Assemble gradient matrix
-    return jnp.array([
-        [dN0_dxi, dN0_deta],
-        [dN1_dxi, dN1_deta],
-        [dN2_dxi, dN2_deta],
-        [dN3_dxi, dN3_deta],
-        [dN4_dxi, dN4_deta],
-        [dN5_dxi, dN5_deta],
-        [dN6_dxi, dN6_deta],
-        [dN7_dxi, dN7_deta],
-        [dN8_dxi, dN8_deta],
-        [dN9_dxi, dN9_deta]
-    ])
+    def Nfun(x):
+        # x is shape (2,) array: [xi, eta]
+        return compute_p3_shape_functions(x[0], x[1])   # returns (10,)
+    J = jax.jacobian(Nfun)(jnp.array([xi, eta]))  # shape (10,2)
+    return J
 
 
 # ============================================================================

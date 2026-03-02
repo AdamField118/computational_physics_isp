@@ -19,7 +19,7 @@ from functools import partial
 from typing import Tuple, Callable, Dict
 import time
 import numpy as np
-
+jax.config.update("jax_enable_x64", True)
 
 # ============================================================================
 # Differentiable Forward Model (P1 - Potential Only)

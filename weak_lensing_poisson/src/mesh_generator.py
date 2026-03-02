@@ -9,6 +9,8 @@ Supports:
 
 """
 
+import jax
+jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 import numpy as np
 from typing import Tuple, Optional
@@ -20,7 +22,6 @@ try:
 except ImportError:
     HAS_TRIANGLE = False
     print("Warning: triangle not available. Install with: pip install triangle")
-
 
 def generate_structured_mesh(nx: int, ny: int,
                             xmin: float = 0.0, xmax: float = 1.0,

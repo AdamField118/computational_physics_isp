@@ -4,6 +4,7 @@ Solves:  nabla^2 psi = 2 kappa on 2D domains
 """
 
 import jax
+jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 from jax import jit, vmap
 from functools import partial
