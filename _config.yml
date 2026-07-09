@@ -1,4 +1,0 @@
-include:
-  - nbody_comparison/web
-  - textbook_notes
-  - fem_1d_benchmark/web
