@@ -7,7 +7,7 @@ snippet: "Affine transformations, reference elements, Jacobians, and approximati
 
 # Chapter 4: Finite Element Spaces
 
-These notes cover the mathematical machinery for transforming between reference and physical elements, which is essential for implementing finite element methods.
+These notes follow the maps between reference and physical elements and their effect on derivatives, integrals, and error estimates.
 
 ## 4.1 The Affine Family
 
@@ -246,17 +246,6 @@ $$\|u\|_{L^2(\partial K)} \leq C h_K^{-1/2} \|u\|_{L^2(K)} + C h_K^{1/2} |u|_{H^
 | Interpolation error | $\|u - \Pi_K u\|_{H^m(K)} \leq C h_K^{k+1-m} \|u\|_{H^{k+1}(K)}$ |
 | Inverse inequality | $\|v\|_{H^m(K)} \leq C h_K^{s-m} \|v\|_{H^s(K)}$, $s < m$ |
 | Shape regularity | $h_K / \rho_K \leq \gamma$ |
-
-## Key Takeaways
-
-1. **Reference elements** simplify computation - do everything on $\widehat{K}$
-2. **Affine transformations** map reference to physical elements
-3. **Jacobian** appears in all integral transformations
-4. **Derivatives transform** via $B_K^{-T}$ (transpose-inverse)
-5. **Interpolation error** scales as $O(h^{k+1})$ for $P_k$ elements
-6. **Inverse inequalities** require shape regularity (no skinny elements)
-7. **Shape regularity** is essential for uniform error estimates
-8. **Scaling arguments** (homogeneity) are the key analytical technique
 
 ## Notation Reference
 

@@ -1,9 +1,8 @@
 /*
- * 1D FEM Assembly in C (Optimized - trust pre-zeroed arrays)
+ * 1D FEM assembly into preallocated arrays.
  * 
- * Key insight: NumPy already zeroes K and F with np.zeros()
- * NumPy uses calloc-like optimization (OS lazy zero pages)
- * So we DON'T need to zero again - just write the non-zero entries!
+ * The caller must zero K and F before assembly. Only nonzero entries
+ * are written here.
  * 
  * Compile as shared library:
  *   gcc -O3 -fPIC -shared -o fem_c.so fem_assembly.c
@@ -16,9 +15,7 @@ void assemble_system(int n, const double* f_vals, double* K, double* F) {
     const double h = 1.0 / n;
     const double k_local = 1.0 / h;
     
-    // OPTIMIZATION: K and F are already zeroed by NumPy!
-    // NumPy's np.zeros() uses OS-optimized allocation (like calloc)
-    // Don't waste time re-zeroing - just write the values we need
+    // The caller supplies zeroed arrays.
     
     // Assemble load vector (direct assignment - F is already zero)
     for (int i = 1; i < n; i++) {

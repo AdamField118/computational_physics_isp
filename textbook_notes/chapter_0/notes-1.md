@@ -213,7 +213,7 @@ This is the standard second-order accurate finite difference approximation.
 
 ### Key Observation
 
-Even on non-uniform meshes, the finite element method produces second-order accurate solutions (in $L^2$), even though the difference equations may only be first-order consistent. This demonstrates the robustness of the variational formulation.
+Even on non-uniform meshes, the finite element method produces second-order accurate solutions (in $L^2$), even though the difference equations may only be first-order consistent.
 
 ## 0.6 Computer Implementation
 
@@ -332,19 +332,6 @@ where $r_i = h_i/h_{i-1}$ is the ratio of adjacent mesh intervals.
 **Theorem 0.9.7** (Summary):
 - Without restrictions: $\|u - u_S\|_E \leq \frac{1}{\sqrt{2}} \|hu''\|$ and $\|u - u_S\| \leq \frac{1}{\sqrt{2}} \|h(u - u_S)'\|$
 - With small mesh variation $M$: $\|u - u_S\| \leq C(M) \|h^2 u''\|$
-
-## Key Takeaways
-
-1. **Weak formulation** provides a systematic framework for deriving discrete schemes
-2. **Galerkin orthogonality** is fundamental to all error analysis
-3. **Best approximation** in energy norm follows immediately from orthogonality
-4. **Duality arguments** (Aubin-Nitsche) give improved convergence in weaker norms
-5. **Homogeneity arguments** (scaling) reduce mesh-dependent estimates to reference element estimates
-6. **Finite element methods** are equivalent to finite difference methods on structured meshes but more flexible
-7. **Adaptive meshes** can dramatically improve approximation efficiency
-8. **Weighted norms** allow analysis on non-uniform meshes with controlled variation
-9. The **interpolant equals the Galerkin solution** for piecewise linear elements (nodal exactness)
-10. **Second-order convergence** is achieved in $L^2$ norm even with first-order consistency in difference form
 
 ## Important Inequalities
 

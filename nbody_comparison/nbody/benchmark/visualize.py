@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 N-Body Simulation Visualization Script
-Comprehensive performance analysis and visualization
+N-body timing, scaling, and energy-error plots
 Updated with Rust and Julia support
 """
 
@@ -144,7 +144,7 @@ def plot_energy_conservation(df, output_path):
     print(f"✓ Saved: {output_path}")
 
 def plot_comprehensive_scaling(df, output_path):
-    """Create comprehensive 2x2 plot"""
+    """Plot timing, speedup, energy drift, and a fixed-N comparison"""
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     
     # 1. Time per step (log-log)
@@ -282,7 +282,7 @@ def main():
     plot_comprehensive_scaling(df, output_dir / 'comprehensive_scaling.png')
     create_performance_table(df, output_dir / 'performance_summary.md')
     
-    print("\n✅ All visualizations complete!")
+    print("\nVisualizations saved.")
     print(f"📁 Output directory: {output_dir.absolute()}")
 
 if __name__ == '__main__':

@@ -13,8 +13,8 @@ This repository is **code and work only**. The website that used to live at
 
 | Path | What it is |
 |---|---|
-| `2d_shallow_water/` | 2D shallow-water solver |
-| `burger_1d_fvm/` | 1D Burgers' equation, finite volume |
+| `2d_shallow_water/` | Plan and code sketches for a 2D shallow-water solver |
+| `burger_1d_fvm/` | Plan and code sketches for a 1D Burgers finite-volume solver |
 | `fem_1d_benchmark/` | 1D finite-element benchmark |
 | `poisson_2d_fem/` | 2D Poisson, finite element |
 | `weak_lensing_poisson/` | Weak-lensing Poisson problem |

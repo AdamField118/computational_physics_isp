@@ -1,7 +1,7 @@
 ! 1D FEM Assembly in Fortran (receives pre-allocated arrays like C)
 !
-! CRITICAL: Takes pre-allocated arrays as input (like C does)
-! Arrays are already zeroed by NumPy - just write values!
+! Takes preallocated arrays as input (like C does)
+! The caller must zero the arrays before assembly.
 !
 ! Compile with: f2py -c -m fem_fortran fem_assembly.f90 -O3
 
@@ -23,7 +23,7 @@ subroutine assemble_system(n, f_vals, K, F)
     h = 1.0d0 / dble(n)
     k_local = 1.0d0 / h
 
-    ! K and F are ALREADY ZEROED by NumPy!
+    ! K and F are zeroed by the caller.
     ! Just write values directly - NO ZEROING NEEDED!
     
     ! Assemble load vector

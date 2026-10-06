@@ -1,15 +1,8 @@
 """
 Automatic Differentiation Integration for Weak Lensing FEM
 
-Current Status: P1 Elements Only
-- ✅ Differentiable forward model: κ → ψ
-- ⏳ Shear computation: Awaiting P3 implementation
-- ⏳ Inverse problems: Awaiting P3 shear gradients
-
-Future (P3):
-- Fully differentiable: κ → ψ → γ
-- Gradient-based mass reconstruction
-- Bayesian inference with UQ
+P1 potential solve and derivatives with respect to κ.
+Shear reconstruction is implemented separately in forward.py and inverse.py.
 """
 
 import jax
@@ -30,8 +23,7 @@ def forward_model_potential(kappa: jnp.ndarray, mesh) -> jnp.ndarray:
     """
     Differentiable forward model: κ → ψ (P1 elements)
     
-    This is the MINIMAL differentiable version that returns only ψ.
-    Use this when you need gradients w.r.t. κ.
+    Returns ψ and supports differentiation with respect to κ.
     
     Args:
         kappa: (n_nodes,) convergence field
@@ -188,7 +180,7 @@ def validate_potential_gradients(kappa: jnp.ndarray, mesh,
     tolerance = 1e-4
     passed = max_rel_err < tolerance
     
-    print(f"\n  Result: {'✅ PASS' if passed else '❌ FAIL'} "
+    print(f"\n  Result: {'PASS' if passed else 'FAIL'} "
           f"(tolerance = {tolerance:.0e})")
     print("=" * 70)
     
@@ -228,7 +220,7 @@ def profile_forward_backward_potential(kappa: jnp.ndarray, mesh,
     print("\nWarmup (JIT compilation)...")
     _ = forward_model_potential(kappa, mesh)
     _ = compute_gradient_at_point(kappa, mesh, 0)
-    print("✅ Warmup complete\n")
+    print("Warmup complete\n")
     
     # Forward pass only
     print(f"1. Forward pass (κ → ψ) [{n_trials} trials]...")
@@ -281,9 +273,9 @@ def demonstrate_autodiff():
     NOTE: Full shear→mass reconstruction requires P3 elements.
     This demo shows potential ψ gradients only.
     """
-    print("\n" + "🚀" * 35)
+    print("\n" + "=" * 70)
     print(" " * 20 + "AUTODIFF DEMONSTRATION (P1)")
-    print("🚀" * 35)
+    print("=" * 70)
     
     # Setup
     print("\nSetup: Creating synthetic problem...")
@@ -318,53 +310,13 @@ def demonstrate_autodiff():
     profile_forward_backward_potential(kappa_true, mesh, n_trials=5)
     
     print("\n" + "=" * 70)
-    print("✅ Autodiff framework ready!")
-    print("=" * 70)
-    print("\nCurrent capabilities:")
-    print("  1. ✅ Differentiable forward model: κ → ψ")
-    print("  2. ✅ Potential gradients: ∂ψ/∂κ")
-    print("  3. ✅ Validated against finite differences")
-    print("  4. ✅ Performance profiled")
-    print("\nLimitations (P1 elements):")
-    print("  ⚠️  Shear γ = ∇²ψ not available (P1 → constant ∇²ψ = 0)")
-    print("  ⚠️  Cannot do shear→mass reconstruction yet")
-    print("\nNext steps:")
-    print("  → Implement P3 elements for O(h⁴) potential accuracy")
-    print("  → Add P3 shear computation: γ with O(h²) convergence")
-    print("  → Complete differentiable shear→mass pipeline")
-    print("  → Bayesian inference with Laplace approximation")
+    print("P1 derivative checks and timing runs complete; see results above.")
+    print("P1 elements have zero element-interior Hessians, so this module")
+    print("only differentiates the potential solve. See forward.py for P3 shear.")
     print("=" * 70)
 
 
-# ============================================================================
-# TODO: Shear-based functions (requires P3 implementation)
-# ============================================================================
-
-"""
-The following functions will be implemented after P3 elements are added:
-
-1. forward_model_shear(kappa, mesh) -> (gamma1, gamma2)
-   - Differentiable κ → ψ → γ pipeline
-   - Requires P3 second derivatives
-
-2. differentiable_loss(kappa, gamma_obs, mesh) -> loss
-   - Loss function: ||γ_pred - γ_obs||²
-   - For inverse problem optimization
-
-3. compute_gradient_loss(kappa, gamma_obs, mesh) -> ∂L/∂κ
-   - Gradient descent for mass reconstruction
-   - Automatic differentiation through full pipeline
-
-4. hessian_vector_product(kappa, v, gamma_obs, mesh) -> Hv
-   - For Newton-CG optimization
-   - Laplace approximation for UQ
-
-5. compute_fisher_information(kappa, mesh) -> F
-   - Fisher information matrix
-   - Posterior covariance estimation
-
-See ISP document for complete implementation plan.
-"""
+# Shear reconstruction is implemented in forward.py and inverse.py.
 
 
 if __name__ == "__main__":

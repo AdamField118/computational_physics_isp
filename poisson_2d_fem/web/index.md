@@ -88,7 +88,7 @@ $$f(x,y) = -\Delta u_{\text{exact}} = 2\pi^2 \sin(\pi x) \sin(\pi y)$$
 - Error computation and analysis
 - Visualization (Matplotlib)
 
-**Interface**: f2py wrapper for seamless integration
+**Interface**: f2py exposes the Fortran routines to Python
 
 ### Key Implementation Details
 
@@ -109,6 +109,8 @@ Using 3-point Gaussian quadrature for degree-2 accuracy.
 
 ## Convergence Results
 
+The table below is retained from the original write-up. The current Python driver uses a placeholder in `_compute_H1_seminorm`, so its reported H1 values do not yet verify the theoretical rate.
+
 After some debugging and such, we achieved **theoretical convergence rates**:
 
 | h      | Nodes | Elements | $L^2$ Error  | $L^2$ Rate | $H^1$ Error  | $H^1$ Rate |
@@ -126,11 +128,7 @@ After some debugging and such, we achieved **theoretical convergence rates**:
 - $L^2$ error decreases by factor of $\sim$4 (quadratic)
 - $H^1$ error decreases by factor of $\sim$2 (linear)
 
-This confirms:
-1. Implementation is mathematically correct
-2. Numerical integration is sufficiently accurate  
-3. Boundary conditions are properly enforced
-4. No numerical instabilities present
+These rates are the expected targets for a smooth solution on refined P1 meshes.
 
 
 
@@ -174,17 +172,7 @@ This implementation closely follows:
 **Assembly complexity**: O($n_{\text{elements}}$)  
 **Solve complexity**: O($n_{\text{nodes}}^3$) for dense LAPACK (could be improved with sparse solvers)
 
-**Typical timings** (n=20,000 elements):
-- Mesh generation: $\sim$0.5s (Triangle library)
-- Fortran assembly: $\sim$0.05s
-- LAPACK solve: $\sim$2s (dense solver - bottleneck!)
-- Error computation: $\sim$0.1s
-
-**Bottleneck**: Dense direct solver. For production, use:
-- Sparse iterative solvers (CG, GMRES)
-- Multigrid preconditioning
-- Can reduce solve time to $\sim$0.01s for this problem size
-
+The dense matrix becomes expensive as the mesh grows. A sparse solver would avoid storing its zero entries; timing that change requires a separate benchmark.
 
 
 ## Comparison: 1D vs 2D FEM

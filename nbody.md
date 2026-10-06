@@ -108,12 +108,9 @@ v(t + Δt) = v(t) + 0.5*(a(t) + a(t + Δt))*Δt
 - Direct summation: O(N²) per timestep
 - Future optimization: Barnes-Hut tree O(N log N)
 
-## Success Metrics
-1. All implementations produce numerically identical results (within floating-point error)
-2. JAX GPU implementation is fastest for N > 1000
-3. Fortran/C/C++ competitive for small N
-4. Clean, documented code that demonstrates language strengths
-5. Compelling visualizations showing chaotic dynamics
+## Checks
+
+Compare forces and trajectories at matched precision, measure energy drift as the timestep decreases, and locate the CPU/GPU crossover from timings.
 
 ## Questions to Explore
 - At what N does GPU become advantageous?

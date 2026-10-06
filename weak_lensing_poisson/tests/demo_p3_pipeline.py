@@ -10,8 +10,7 @@ Full weak lensing forward model using P3 cubic elements.
 
 SHEAR APPROACH
 --------------
-Rather than deriving Hessian formulas by hand, we let JAX differentiate
-the P3 shape functions twice:
+JAX differentiates the P3 shape functions twice:
 
     H_ref[i, j, k] = d²Nᵢ/d(ref_j) d(ref_k)
 
@@ -24,11 +23,11 @@ map, J is constant per element — no correction terms needed.
 
 USAGE
 -----
-Put this script at your project root and run:
+From weak_lensing_poisson/:
 
-    python demo_p3_pipeline.py
+    PYTHONPATH=. python tests/demo_p3_pipeline.py
 
-Make sure jax x64 is enabled BEFORE any jnp imports (see line below).
+The module enables JAX x64 before importing jax.numpy.
 """
 
 # ── JAX: enable 64-bit BEFORE first use ─────────────────────────────────────
@@ -43,7 +42,7 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as mtri
 from matplotlib.gridspec import GridSpec
 
-# ── Project imports (adjust paths to match your repo layout) ─────────────────
+# ── Project imports ─────────────────
 from src.p3_mesh_generator import generate_p3_structured_mesh
 from src.p3_assembly import (
     assemble_system_p3,
@@ -82,7 +81,7 @@ def _build_ref_hessians() -> np.ndarray:
 
     Shape: (10, 10, 2, 2)
     """
-    # JAX-differentiable wrapper around your existing shape function
+    # JAX-differentiable shape-function wrapper
     def N_vec(xi_eta):
         return compute_p3_shape_functions(xi_eta[0], xi_eta[1])   # → (10,)
 
@@ -361,7 +360,7 @@ def plot_main(res, title="P3 FEM Weak Lensing Pipeline",
                 alpha=0.6, pivot='middle')
 
     plt.savefig(out, dpi=180, facecolor='#0e0e0e', bbox_inches='tight')
-    print(f"✅  {out}")
+    print(f"Saved: {out}")
     plt.close()
 
 
@@ -402,7 +401,7 @@ def plot_validation(res, A, sigma, out="p3_shear_validation.png"):
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig(out, dpi=180, facecolor='#0e0e0e', bbox_inches='tight')
-    print(f"✅  {out}")
+    print(f"Saved: {out}")
     plt.close()
 
 
@@ -439,7 +438,7 @@ def plot_p1_vs_p3(res_p3, nx=30, A=1.0, sigma=0.5,
 
     titles = [
         "P1 elements\n|γ| ≡ 0  (second derivatives vanish)",
-        "P3 elements\n|γ| converges ✅",
+        "P3 elements\n|γ|",
         "Analytic\n|γ| (ground truth)",
     ]
     datas = [
@@ -464,7 +463,7 @@ def plot_p1_vs_p3(res_p3, nx=30, A=1.0, sigma=0.5,
 
     plt.tight_layout(rect=[0, 0, 1, 0.90])
     plt.savefig(out, dpi=180, facecolor='#0e0e0e', bbox_inches='tight')
-    print(f"✅  {out}")
+    print(f"Saved: {out}")
     plt.close()
 
 

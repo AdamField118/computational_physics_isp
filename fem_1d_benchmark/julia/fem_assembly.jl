@@ -1,8 +1,7 @@
 """
 1D FEM Assembly in Julia (Allocates and returns - PyCall compatible)
 
-CRITICAL: PyCall doesn't reliably support in-place modification of NumPy arrays
-Solution: Julia allocates its own arrays and returns them, Python copies back
+Julia allocates the output arrays; the Python wrapper copies them into NumPy buffers.
 
 Usage from Python via PyJulia:
     from julia import Main

@@ -1,8 +1,8 @@
 /*
  * 1D FEM Assembly in C++ (receives pre-allocated arrays like C)
  * 
- * CRITICAL: Takes pre-allocated numpy arrays as input (like C does)
- * Arrays are already zeroed by NumPy - just write values!
+ * Takes preallocated numpy arrays as input (like C does)
+ * The caller must zero the arrays before assembly.
  * 
  * Compile with pybind11:
  *   c++ -O3 -Wall -shared -std=c++11 -fPIC \
@@ -21,7 +21,7 @@ void assemble_system(
     py::array_t<double> K_array,
     py::array_t<double> F_array
 ) {
-    // Get pointers to pre-allocated arrays (already zeroed by NumPy!)
+    // Get pointers to pre-allocated arrays (zeroed by the caller)
     auto f_vals_buf = f_vals_array.request();
     auto K_buf = K_array.request();
     auto F_buf = F_array.request();
@@ -33,7 +33,7 @@ void assemble_system(
     const double h = 1.0 / n;
     const double k_local = 1.0 / h;
     
-    // K and F are ALREADY ZEROED by NumPy!
+    // K and F are zeroed by the caller.
     // Just write values directly - NO ZEROING NEEDED!
     
     // Assemble load vector

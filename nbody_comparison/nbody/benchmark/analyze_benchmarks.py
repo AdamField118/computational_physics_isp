@@ -1,6 +1,6 @@
 """
 Enhanced Analysis of N-Body Benchmark Results
-Generates comprehensive plots and statistics from benchmark data
+Plots timings and energy drift from the saved benchmark data
 
 Adam Field - Computational Physics ISP
 """
@@ -56,7 +56,7 @@ class BenchmarkAnalyzer:
             return
         
         print("\n" + "=" * 70)
-        print("Generating Comprehensive Analysis Report")
+        print("Generating benchmark analysis")
         print("=" * 70 + "\n")
         
         self.plot_scaling_comparison()

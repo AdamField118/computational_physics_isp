@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-FEM 1D Benchmark Suite - Uniform Interface (Julia Fix)
-ALL languages receive pre-allocated numpy arrays
+FEM assembly benchmark with a common wrapper interface.
 
-Note: Julia allocates internally (PyCall limitation) then copies back
+The wrappers receive preallocated NumPy arrays. Python and Julia also
+allocate internal arrays and copy their results into those buffers.
 """
 
 import numpy as np
@@ -115,7 +115,7 @@ class BenchmarkSuite:
                 'order': 'C'
             }
         except Exception as e:
-            print(f"⚠️  Failed to load C: {e}")
+            print(f"Warning:  Failed to load C: {e}")
             return None
     
     def _load_cpp(self):
@@ -135,7 +135,7 @@ class BenchmarkSuite:
                 'order': 'C'
             }
         except Exception as e:
-            print(f"⚠️  Failed to load C++: {e}")
+            print(f"Warning:  Failed to load C++: {e}")
             return None
     
     def _load_fortran(self):
@@ -155,7 +155,7 @@ class BenchmarkSuite:
                 'order': 'F'
             }
         except Exception as e:
-            print(f"⚠️  Failed to load Fortran: {e}")
+            print(f"Warning:  Failed to load Fortran: {e}")
             return None
     
     def _load_julia(self):
@@ -196,7 +196,7 @@ class BenchmarkSuite:
                 'order': 'F'  # Julia uses column-major
             }
         except Exception as e:
-            print(f"⚠️  Failed to load Julia: {e}")
+            print(f"Warning:  Failed to load Julia: {e}")
             return None
     
     def _load_rust(self):
@@ -216,11 +216,11 @@ class BenchmarkSuite:
                 'order': 'C'
             }
         except Exception as e:
-            print(f"⚠️  Failed to load Rust: {e}")
+            print(f"Warning:  Failed to load Rust: {e}")
             return None
     
     def verify_correctness(self, n=100, tol=1e-12):
-        """Verify all implementations produce identical results"""
+        """Compare each loaded implementation with the Python reference"""
         print("=" * 70)
         print("CORRECTNESS VERIFICATION")
         print("=" * 70)
@@ -278,7 +278,7 @@ class BenchmarkSuite:
         
         print("-" * 70)
         if all_pass:
-            print("✓ All implementations verified correct!\n")
+            print("✓ All loaded implementations match the reference within tolerance.\n")
         else:
             print("✗ Some implementations failed verification!\n")
             sys.exit(1)

@@ -7,7 +7,7 @@ snippet: "A complete derivation of the finite element method for solving the 2D 
 
 ## Abstract
 
-Weak gravitational lensing requires solving a 2D Poisson equation $\nabla^2\psi=2\kappa$ to compute the lensing potential from observed convergence maps. We derive the finite element method (FEM) for this problem from first principles: starting with the strong form PDE, deriving the weak (variational) formulation, discretizing with piecewise linear basis functions, assembling the global stiffness matrix, and solving for nodal potentials. Interactive demonstrations show mesh generation, element assembly, and the complete solve pipeline. This framework provides the foundation for GPU-accelerated lensing reconstruction.
+Weak gravitational lensing requires solving a 2D Poisson equation $\nabla^2\psi=2\kappa$ to compute the lensing potential from observed convergence maps. We derive the finite element method (FEM) for this problem from first principles: starting with the strong form PDE, deriving the weak (variational) formulation, discretizing with piecewise linear basis functions, assembling the global stiffness matrix, and solving for nodal potentials. The interactive examples show mesh generation, element assembly, and a Poisson solve.
 
 ## 1. The Lensing Poisson Equation
 
@@ -178,7 +178,7 @@ $$\psi|_{T_e} = \psi_1^e N_1 + \psi_2^e N_2 + \psi_3^e N_3 \qquad\boldsymbol{(13
 
 ### 3.4 Interactive Demo: Mesh and Basis Functions
 
-Let's visualize how a 2D mesh is constructed and how basis functions work:
+The example below shows the mesh and the support of a selected basis function:
 
 [codeContainer](/weak_lensing_poisson/web/js/fem-mesh-demo.js)
 
@@ -224,7 +224,7 @@ For example:
 
 $$K_{11}^e = \frac{1}{4A_e}[(y_2 - y_3)^2 + (x_3 - x_2)^2] \qquad\boldsymbol{(20)}$$
 
-And similarly for all 9 entries. This can be vectorized easily on GPU!
+The remaining entries follow the same calculation.
 
 ### 4.4 Element Load Vector
 
@@ -295,7 +295,7 @@ For a typical 2D mesh:
 
 ### 5.3 Interactive Demo: Element Assembly
 
-Let's visualize how individual element matrices combine into the global system:
+The example below adds element matrices to the global system:
 
 [codeContainer](/weak_lensing_poisson/web/js/fem-assembly-demo.js)
 
@@ -318,7 +318,7 @@ For $\boldsymbol{\psi} \boldsymbol{=} \boldsymbol{0}$ **on** $\boldsymbol{\parti
 - Set $K[i,:] = 0$, $K[i,i] = 1$, $f[i] = 0$
 - Explicitly enforces $\psi_i = 0$
 
-We'll use **Method 3** (cleanest for coding).
+The implementation below uses **Method 3**.
 
 ### 6.2 Neumann Boundary Conditions
 
@@ -565,7 +565,7 @@ def solve_lensing(kappa, nodes, elements, boundary_nodes):
 
 ### 9.3 Interactive Demo: Complete Solver
 
-Let's run a full FEM solve for a simple lens configuration:
+The solver below uses a simple lens configuration:
 
 [codeContainer](/weak_lensing_poisson/web/js/fem-solver-demo.js)
 
@@ -595,7 +595,7 @@ $$\kappa(\theta) = \frac{\theta_E}{2|\boldsymbol{\theta}|} \qquad\boldsymbol{(33
 
 $$\alpha(\theta) = \theta_E \qquad\boldsymbol{(34)}$$
 
-Constant deflection! Easy to verify.
+The deflection magnitude is constant.
 
 ### 10.3 Convergence Study
 
@@ -662,7 +662,7 @@ For sources at different redshifts, we have **multiple lenses** at different dis
 2. Ray-trace through each plane sequentially
 3. Cumulative deflection
 
-Still uses 2D FEM at each plane!
+Each plane requires a 2D FEM solve.
 
 ### 12.2 Non-Linear Lensing
 
@@ -688,7 +688,7 @@ where:
 - $L$: Likelihood operator (compares shear)
 - $R$: Regularization (smoothness prior)
 
-**Gradient-based optimization**: JAX autodiff computes $\partial/\partial\psi_i$ automatically!
+**Gradient-based optimization**: Differentiate the loss with respect to $\psi_i$.
 
 ### 12.4 GPU Acceleration
 
@@ -707,7 +707,7 @@ The FEM solve $K\psi = \mathbf{f}$ can be viewed as:
 
 $$\boldsymbol{\psi} = K^{-1}\mathbf{f} = \mathcal{F}(\kappa; \text{mesh}) \qquad\boldsymbol{(35)}$$
 
-This is a **differentiable function** $\kappa \to \psi$!
+The solve defines a differentiable map $\kappa \to \psi$.
 
 **JAX autodiff**: Can compute $\partial\psi/\partial\kappa$ for optimization.
 
@@ -728,7 +728,6 @@ This is a **differentiable function** $\kappa \to \psi$!
 - Use as error indicator instead of residual
 - Faster than traditional estimators
 
-Active research area!
 
 ## 14. Practical Considerations
 
@@ -799,7 +798,7 @@ $$K\boldsymbol{\psi} = \mathbf{f} \quad \xrightarrow{\text{CG}} \quad \boldsymbo
 | **Finite Difference** | Simple stencils | Regular grids, harder for complex domains |
 | **Neural Networks** | Ultra-fast inference | Requires training data, less interpretable |
 
-FEM shines for:
+Reasons to use FEM include:
 - Complex survey geometries
 - Adaptive resolution
 - Coupling with inverse problems
@@ -845,12 +844,6 @@ FEM shines for:
 - Baryonic effects on small scales (need high resolution)
 - Multi-wavelength data fusion (X-ray, SZ, optical)
 - Time-domain lensing (for moving lenses)
-
-### 15.5 Closing Thoughts
-
-The finite element method provides a mathematically rigorous and computationally efficient framework for solving the lensing Poisson equation. By leveraging GPU acceleration (JAX), adaptive meshing, and modern linear algebra, we can reconstruct mass distributions at unprecedented resolution and speed.
-
-This methodology forms the computational backbone of my weak lensing research, connecting differential geometry (geodesics), functional analysis (weak formulation), numerical analysis (FEM discretization), and machine learning (ShearNet shear estimation) into a unified pipeline.
 
 ## Appendix A: Barycentric Coordinates
 

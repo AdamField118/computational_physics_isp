@@ -9,8 +9,10 @@ This project implements the **same N-body gravitational simulation** in multiple
 
 - **JAX** (GPU-accelerated with JIT compilation)
 - **Fortran** (CPU with OpenMP parallelization)
-- **C++** (Coming soon)
-- **C** (Coming soon)
+- **C++** (pybind11 wrapper)
+- **C** (ctypes wrapper)
+- **Rust** (PyO3 wrapper)
+- **Julia** (Python wrappers)
 - **Pure Python** (Baseline reference)
 
 All implementations use the **Velocity Verlet** integrator for time-stepping and compute pairwise gravitational forces with O(N²) complexity. The goal is to understand the performance tradeoffs between different computational approaches for the same physics problem.
@@ -183,37 +185,11 @@ plt.show()
 - Double precision (`real(dp)`)
 - OpenMP parallelization of force loop
 - Column-major array layout (native to Fortran)
-- f2py provides seamless Python interface
+- f2py exposes the Fortran routines to Python
 
-### Expected Performance Characteristics
+## Saved Results
 
-For **N = 1000 particles**:
-- **JAX (GPU):** ~1-5 ms/step (depending on GPU)
-- **Fortran (CPU, 8 cores):** ~20-50 ms/step
-- **Pure Python:** ~5000+ ms/step (1000x slower!)
-
-**Crossover point:** JAX should dominate for N > 500-1000 particles
-
-## Key Findings (To Be Updated)
-
-### Scaling Behavior
-- Both JAX and Fortran show expected O(N²) scaling
-- JAX compilation overhead is ~1-2 seconds
-- GPU memory transfer becomes bottleneck for small N
-
-### Energy Conservation
-- Velocity Verlet maintains energy to ~0.001% over 10,000 steps
-- All implementations agree to machine precision
-- Energy drift increases with larger timesteps
-
-### Language Tradeoffs
-| Language | Speed | Ease of Use | GPU Support | Parallelization |
-|----------|-------|-------------|-------------|-----------------|
-| JAX      | ★★★★★ | ★★★★☆       | ★★★★★       | Automatic       |
-| Fortran  | ★★★★☆ | ★★☆☆☆       | ☆☆☆☆☆       | Manual (OpenMP) |
-| C++      | ★★★★☆ | ★★★☆☆       | ★★★☆☆       | Manual          |
-| C        | ★★★★☆ | ★★☆☆☆       | ★★★☆☆       | Manual          |
-| Python   | ★☆☆☆☆ | ★★★★★       | ★★★☆☆       | Libraries only  |
+Timings and energy drift are recorded in `web/data/benchmark_results.json`. Compare implementations at the same particle count and number of steps; the GPU crossover depends on both the hardware and the CPU implementation.
 
 ## Testing & Validation
 
@@ -253,14 +229,6 @@ gprof ./nbody_fortran
 - [ ] WebGPU for browser-based simulation
 - [ ] Collision detection
 - [ ] Relativistic corrections
-
-## Learning Outcomes
-
-This project demonstrates:
-1. **Numerical methods:** Symplectic integrators, error analysis
-2. **HPC concepts:** GPU acceleration, OpenMP, memory bandwidth
-3. **Software engineering:** Multi-language interoperability, testing, benchmarking
-4. **Performance analysis:** Profiling, scaling studies, optimization
 
 ## References
 

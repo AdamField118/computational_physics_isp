@@ -1,178 +1,55 @@
 # 1D FEM Multi-Language Benchmark
 
-Implementation and benchmarking of 1D finite element method from Brenner & Scott Chapter 0 across multiple programming languages.
+Assembly of a one-dimensional finite-element stiffness matrix and load vector in Python, C, C++, Fortran, Julia, and Rust, following Brenner & Scott, Chapter 0.
 
-## Quick Start
+## Run
 
-### 1. Test Python Reference Implementation
-
-```bash
-python fem_reference.py
-```
-
-This will:
-- Run a quick test with n=10
-- Perform convergence study
-- Generate a convergence plot
-- Verify O(h²) convergence in L² norm
-
-### 2. Build Fortran Extension
+From `fem_1d_benchmark/`, run the Python reference check:
 
 ```bash
-# Using f2py
-f2py -c -m fem_fortran fem_assembly.f90 -llapack -lblas
-
-# Test in Python
-python -c "from fem_fortran import assemble_system; print('Fortran module loaded successfully!')"
+python python/fem_reference.py
 ```
 
-### 3. Build C Extension
+This prints matrix and load-vector entries for n=10. It does not run a convergence study.
+
+The Makefile provides the compiled-language workflow:
 
 ```bash
-# Compile as shared library
-gcc -O3 -fPIC -shared -o fem_c.so fem_assembly.c
-
-# For testing standalone
-gcc -O3 -DTEST_MAIN -o fem_c_test fem_assembly.c
-./fem_c_test
+make build
+make test
+make benchmark
+make dashboard
 ```
 
-Python wrapper example:
-```python
-import numpy as np
-from ctypes import CDLL, c_int, POINTER, c_double
-import numpy.ctypeslib as npct
+`make build` calls `build.sh`. The compiled extensions require their respective compilers and Python bindings: f2py for Fortran, pybind11 for C++, PyO3/maturin for Rust, and PyJulia for Julia. The C wrapper uses ctypes.
 
-# Load library
-lib = CDLL('./fem_c.so')
+## Files
 
-# Set up function signature
-lib.assemble_system.argtypes = [
-    c_int,                              # n
-    npct.ndpointer(dtype=np.float64),   # f_vals
-    npct.ndpointer(dtype=np.float64),   # K (output)
-    npct.ndpointer(dtype=np.float64)    # F (output)
-]
+| Path | Purpose |
+|---|---|
+| `python/fem_reference.py` | NumPy reference assembly |
+| `c/fem_assembly.c` | C implementation |
+| `cpp/fem_assembly.cpp` | C++ implementation |
+| `fortran/fem_assembly.f90` | Fortran implementation |
+| `julia/fem_assembly.jl` | Julia implementation |
+| `rust/src/lib.rs` | Rust implementation |
+| `benchmark/benchmark.py` | Benchmark used by the Makefile |
+| `benchmark/benchmark_all.py` | Alternate benchmark driver |
+| `benchmark/visualize.py` | HTML dashboard generator |
+| `results/fem_benchmark_results.json` | Saved timings |
+| `web/fem_1d_benchmark_project.md` | Benchmark write-up |
 
-def assemble_system(n, f_vals):
-    K = np.zeros((n, n), dtype=np.float64)
-    F = np.zeros(n, dtype=np.float64)
-    lib.assemble_system(n, f_vals, K, F)
-    return K, F
+## What Is Timed
 
-# Test
-n = 10
-x = np.linspace(0, 1, n+1)
-f_vals = 2 - 6*x
-K, F = assemble_system(n, f_vals)
-print(f"K shape: {K.shape}, F shape: {F.shape}")
-```
+The main driver compares matrices and load vectors with the Python reference, warms up each implementation, and times repeated assembly calls. It reports mean, standard deviation, minimum, and maximum runtime.
 
-### 4. Build C++ Extension (with pybind11)
+The wrappers receive preallocated arrays. Python and Julia also allocate internally and copy their output into those arrays, so their timings include work that the other implementations avoid. The element loop is O(n), while dense matrix storage is O(n²).
 
-```bash
-# Install pybind11 if needed
-pip install pybind11
+The saved run contains n = 500, 1000, 5000, 10000, and 20000. Use the JSON results for numerical comparisons.
 
-# Compile
-c++ -O3 -Wall -shared -std=c++11 -fPIC \
-    $(python3 -m pybind11 --includes) \
-    fem_assembly.cpp -o fem_cpp$(python3-config --extension-suffix)
-```
+## Verification Scope
 
-### 5. Julia (using PyJulia)
-
-```bash
-# Install PyJulia
-pip install julia
-
-# In Python, initialize Julia
-python -c "import julia; julia.install()"
-```
-
-### 6. Rust (using PyO3/maturin)
-
-```bash
-# Install maturin
-pip install maturin
-
-# In the Rust project directory
-maturin develop --release
-```
-
-## Project Structure
-
-```
-.
-├── README.md                    # This file
-├── fem_reference.py            # Python reference implementation
-├── fem_assembly.f90            # Fortran implementation
-├── fem_assembly.c              # C implementation
-├── fem_assembly.cpp            # C++ implementation (TODO)
-├── fem_assembly.jl             # Julia implementation (TODO)
-├── fem_assembly_rust/          # Rust project (TODO)
-│   ├── Cargo.toml
-│   └── src/lib.rs
-├── benchmark.py                # Main benchmarking script (TODO)
-└── results/
-    ├── convergence.png
-    └── benchmark_results.csv
-```
-
-## Mathematical Problem
-
-Solve: $-u''(x) = f(x)$ on $(0,1)$ with $u(0) = 0$, $u'(1) = 0$
-
-**Manufactured solution**: $u(x) = x^2 - x^3$, so $f(x) = 2 - 6x$
-
-## Implementation Checklist
-
-- [x] Python reference implementation
-- [x] Fortran with f2py wrapper
-- [x] C with ctypes wrapper
-- [ ] C++ with pybind11 wrapper
-- [ ] Julia with PyJulia wrapper
-- [ ] Rust with PyO3 wrapper
-- [ ] Benchmarking script
-- [ ] Correctness tests
-- [ ] Performance plots
-
-## Expected Performance Characteristics
-
-Based on typical performance:
-1. **Fortran/C/Rust**: ~1x (baseline)
-2. **C++ (optimized)**: ~1-1.2x
-3. **Julia (after JIT)**: ~1-1.5x
-4. **Python**: ~50-100x slower
-
-Assembly complexity: O(n) where n is number of elements
-
-## Verification
-
-All implementations should produce:
-- Identical stiffness matrices and load vectors (< 1e-12 difference)
-- L² error: O(h²) convergence
-- Energy error: O(h) convergence
-- Max error: O(h²) convergence
-
-## Next Steps
-
-1. **Implement remaining languages** (C++, Julia, Rust)
-2. **Create benchmark.py** that:
-   - Loads all implementations
-   - Runs correctness tests
-   - Times assembly for various n
-   - Generates comparison plots
-3. **Add parallel versions** (OpenMP, Rayon, etc.)
-4. **Extend to 2D** (optional)
-
-## Tips
-
-- **Indexing**: Watch for 0-based (C/C++/Rust/Python) vs 1-based (Fortran/Julia)
-- **Memory layout**: Row-major (C/C++/Python) vs column-major (Fortran/Julia)
-- **Testing**: Use small n first, check against reference
-- **Debugging**: Print K[0,0], K[0,1], F[0] and compare with reference
-- **Profiling**: Use language-specific profilers before optimizing
+Agreement with the Python reference checks cross-language assembly consistency. It does not establish convergence to an analytic solution. The manufactured solution and source term in the reference need to be reconciled before using them for that purpose: for `u = x**2 - x**3`, `-u'' = -2 + 6*x`, whereas `source_term` returns `2 - 6*x`; this `u` also has `u'(1) = -1`, not zero.
 
 ## References
 
@@ -182,16 +59,3 @@ All implementations should produce:
 - pybind11 docs: https://pybind11.readthedocs.io/
 - PyJulia: https://pyjulia.readthedocs.io/
 - PyO3: https://pyo3.rs/
-
-## Sample Benchmark Results (Placeholder)
-
-| Language | n=1000 (ms) | n=10000 (ms) | n=100000 (ms) | Speedup |
-|----------|-------------|--------------|---------------|---------|
-| Fortran  | 0.15        | 1.2          | 12           | 1.0x    |
-| C        | 0.14        | 1.1          | 11           | 1.1x    |
-| C++      | 0.15        | 1.2          | 12           | 1.0x    |
-| Rust     | 0.13        | 1.0          | 10           | 1.2x    |
-| Julia    | 0.18        | 1.4          | 14           | 0.9x    |
-| Python   | 8.5         | 85           | 850          | 0.01x   |
-
-*Note: These are placeholder values - actual results will vary by machine*

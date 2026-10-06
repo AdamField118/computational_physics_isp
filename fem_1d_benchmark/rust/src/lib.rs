@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 
 /// Assemble into pre-allocated arrays (like C does)
 /// 
-/// Arrays K and F are already zeroed by NumPy - just write values!
+/// The caller must zero K and F before assembly.
 #[pyfunction]
 fn assemble_system(
     n: usize,
@@ -16,11 +16,11 @@ fn assemble_system(
     let h = 1.0 / n as f64;
     let k_local = 1.0 / h;
     
-    // Get mutable access to pre-allocated arrays (already zeroed by NumPy!)
+    // Get mutable access to pre-allocated arrays (zeroed by the caller)
     let k_data = k_array.as_slice_mut().unwrap();
     let f_data = f_array.as_slice_mut().unwrap();
     
-    // K and F are ALREADY ZEROED by NumPy!
+    // K and F are zeroed by the caller.
     // Just write values directly - NO ZEROING NEEDED!
     
     // Assemble load vector

@@ -203,11 +203,11 @@ def convergence_study_p3(solution: ManufacturedSolution,
     print(f"Theoretical rate (P3):       4.00")
     
     if avg_L2_rate > 3.5:
-        print("✅ P3 achieves expected O(h⁴) convergence!")
+        print("PASS P3 achieves expected O(h⁴) convergence!")
     elif avg_L2_rate > 2.5:
-        print("⚠️  Convergence rate between O(h³) and O(h⁴)")
+        print("Warning:  Convergence rate between O(h³) and O(h⁴)")
     else:
-        print("❌ Convergence rate below O(h³) - check implementation")
+        print("FAIL Convergence rate below O(h³) - check implementation")
     
     print("=" * 70)
     
@@ -306,9 +306,9 @@ def plot_convergence_p3(results_list, filename='p3_convergence.png', invert_x=Tr
 # ============================================================================
 
 if __name__ == "__main__":
-    print("\n" + "🎯" * 35)
+    print("\n" + "=" * 70)
     print(" " * 18 + "P3 CONVERGENCE VALIDATION")
-    print("🎯" * 35)
+    print("=" * 70)
     
     # Mesh refinement sequence
     mesh_sizes = [
@@ -321,27 +321,27 @@ if __name__ == "__main__":
     results_list = []
     
     # Test 1: Sinusoidal solution
-    print("\n" + "🔥" * 35)
+    print("\n" + "=" * 70)
     print("TEST 1: SINUSOIDAL SOLUTION")
-    print("🔥" * 35)
+    print("=" * 70)
     
     sol1 = SinusoidalSolution()
     results1 = convergence_study_p3(sol1, mesh_sizes, domain=(0, 1, 0, 1))
     results_list.append(results1)
     
     # Test 2: Polynomial solution
-    print("\n" + "🔥" * 35)
+    print("\n" + "=" * 70)
     print("TEST 2: POLYNOMIAL SOLUTION")
-    print("🔥" * 35)
+    print("=" * 70)
     
     sol2 = PolynomialSolution()
     results2 = convergence_study_p3(sol2, mesh_sizes, domain=(-1, 1, -1, 1))
     results_list.append(results2)
     
     # Test 3: Biquadratic solution
-    print("\n" + "🔥" * 35)
+    print("\n" + "=" * 70)
     print("TEST 3: BIQUADRATIC SOLUTION")
-    print("🔥" * 35)
+    print("=" * 70)
     
     sol3 = BiquadraticSolution()
     results3 = convergence_study_p3(sol3, mesh_sizes, domain=(0, 1, 0, 1))
@@ -351,10 +351,9 @@ if __name__ == "__main__":
     plot_convergence_p3(results_list)
     
     print("\n" + "=" * 70)
-    print("✅ P3 CONVERGENCE VALIDATION COMPLETE")
+    print("P3 convergence runs complete.")
     print("=" * 70)
     print("\nSummary:")
     print("  - All solutions should show O(h⁴) convergence")
     print("  - Convergence plot saved to: p3_convergence.png")
-    print("  - Ready for P1 vs P3 comparison!")
     print("=" * 70)

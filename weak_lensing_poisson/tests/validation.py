@@ -1,8 +1,6 @@
 """
-Fixed validation with proper boundary-compatible test cases
-
-Key insight: For convergence testing, the analytic solution MUST satisfy
-the boundary conditions we're imposing!
+P1 convergence tests with analytic solutions that satisfy the imposed
+boundary conditions.
 """
 
 import sys
@@ -224,7 +222,7 @@ def plot_convergence_comparison(results_list, labels, filename='convergence_comp
     
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.savefig(filename, dpi=300, facecolor='#1a1a1a', bbox_inches='tight')
-    print(f"\n✅ Convergence comparison plot saved: {filename}")
+    print(f"\nConvergence comparison plot saved: {filename}")
     plt.close()
 
 
@@ -236,8 +234,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 35)
     print(" " * 20 + "P1 VALIDATION SUITE")
     print("=" * 35)
-    print("\nKey Insight: Convergence tests require analytic solutions")
-    print("that EXACTLY satisfy the imposed boundary conditions!")
+    print("\nAnalytic test solutions satisfy the imposed boundary conditions.")
     print("=" * 70 + "\n")
     
     # Run all convergence studies
@@ -250,19 +247,12 @@ if __name__ == "__main__":
     # Plot comparison
     plot_convergence_comparison(
         [results_sin, results_poly],
-        ['Sinusoidal (perfect BC)', 'Polynomial (perfect BC)'],
+        ['Sinusoidal (compatible BC)', 'Polynomial (compatible BC)'],
         filename='convergence_p1.png'
     )
     
     print("\n" + "=" * 70)
-    print("✅ VALIDATION COMPLETE")
+    print("P1 convergence runs complete.")
     print("=" * 70)
-    print("\nKey Takeaways:")
-    print("1. ✅ Manufactured solutions with compatible BCs show O(h^2) convergence")
-    print("2. ✅ P1 elements validated and working correctly")
-    print("3. ⏳ Ready for P3 implementation!")
-    print("\nNext Steps:")
-    print("→ Implement P3 elements for O(h^4) potential accuracy")
-    print("→ Add P3 shear computation with O(h^2) convergence")
-    print("→ Build complete shear→mass reconstruction pipeline")
+    print("Expected P1 L2 rate: O(h^2); see the measured rates above.")
     print("=" * 70)

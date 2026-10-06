@@ -1,6 +1,6 @@
 # 2D Poisson Equation FEM Solver
 
-**Educational finite element solver demonstrating hybrid Fortran-Python architecture for computational physics.**
+A P1 triangular-element solver with Fortran assembly and a Python driver.
 
 ---
 
@@ -32,7 +32,7 @@ $$\int_\Omega \nabla u \cdot \nabla v \, dx = \int_\Omega f v \, dx \quad \foral
 - **Arbitrary 2D domains** via Triangle mesh generator  
 - **Manufactured solution verification**  
 - **Hybrid architecture:** Fortran (assembly/solve) + Python (driver/visualization)  
-- **Professional visualizations** with dark theme styling  
+- **Solution and convergence plots**
 - **Convergence rate testing** with automatic refinement  
 
 ---
@@ -132,6 +132,8 @@ F_i = ∫_K f φᵢ dx ≈ |det(B_K)| × Σ wq f(xq) φᵢ(xq)
 ---
 
 ## Verification Results
+
+The table below is retained from the original write-up. The current Python driver uses a placeholder in `_compute_H1_seminorm`, so its reported H1 values do not yet verify the theoretical rate.
 
 Convergence study with manufactured solution `u = sin(πx)sin(πy)`:
 

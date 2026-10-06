@@ -2,28 +2,25 @@
 title: "1D Finite Element Method: Multi-Language Performance Analysis"
 date: "2026-02-02"
 tags: "Project"
-snippet: "Complete benchmark comparing FEM assembly performance across 6 languages: Python, C, C++, Fortran, Julia, and Rust - achieving up to 294× speedup"
+snippet: "Assembly timings for a 1D finite-element problem in Python, C, C++, Fortran, Julia, and Rust."
 ---
 ## Summary
 This project implements and benchmarks the piecewise linear finite element method from Brenner & Scott Chapter 0, Section 0.4 across **six programming languages**: Python, C, C++, Fortran, Julia, and Rust. 
 **Key Results:**
 - **Rust & Fortran**: Tied for fastest at 0.531 ms (294× faster than Python for n=20,000)
-- **C++**: 0.547 ms (286× speedup) - fastest at small scales
-- **C**: 0.566 ms (276× speedup) - excellent portability
-- **Python**: 156 ms baseline - ideal for prototyping
-- **Julia**: Unexpectedly slow (1845 ms) due to PyCall FFI overhead
-**Theoretical Validation:**
-- Assembly complexity: O(n)
-- Convergence rates: L² error = O(h²), Energy error = O(h)
-- All implementations produce bitwise-identical results (error < 10⁻¹²)
+- **C++**: 0.547 ms (286× speedup)
+- **C**: 0.566 ms (276× speedup)
+- **Python**: 156 ms baseline
+- **Julia**: 1845 ms, including internal allocation and copying into NumPy arrays
+The saved timings are in `fem_1d_benchmark/results/fem_benchmark_results.json`. The benchmark checks assembled matrices and load vectors against the Python reference at a tolerance of 10⁻¹².
 ## Mathematical Problem
 We solve the boundary value problem:
 $$-u''(x) = f(x) \quad \text{on } (0,1)$$
 $$u(0) = 0, \quad u'(1) = 0$$
-**Manufactured Solution** (for verification):
+The reference currently defines:
 $$u_{\text{exact}}(x) = x^2 - x^3$$
-$$f(x) = -u''(x) = 2 - 6x$$
-This manufactured solution allows exact error computation and verification that all implementations produce identical results.
+$$f(x) = 2 - 6x$$
+These definitions need to be reconciled before a convergence test: the stated solution has $-u''=-2+6x$ and $u'(1)=-1$. The benchmark checks agreement between assembly implementations, not agreement with this analytic solution.
 ## Interactive Performance Dashboard
 [codeContainer](/fem_1d_benchmark/web/scripts/fem_benchmark_viz.js)
 ## Performance Results
@@ -37,7 +34,7 @@ This manufactured solution allows exact error computation and verification that 
 | **Python** | 156.295 ± 0.414 ms | 1.00× | 0.003× |
 | **Julia** | 1845.302 ± 27.807 ms | 0.08× | 0.0003× |
 ### Scaling Analysis
-All compiled languages (C, C++, Fortran, Rust) demonstrate **perfect O(n) scaling**:
+Assembly timings increase with mesh size:
 | n | Python (ms) | C (ms) | C++ (ms) | Fortran (ms) | Rust (ms) |
 |---|-------------|--------|----------|--------------|-----------|
 | 500 | 0.594 | 0.023 | 0.010 | 0.006 | 0.006 |
@@ -45,7 +42,7 @@ All compiled languages (C, C++, Fortran, Rust) demonstrate **perfect O(n) scalin
 | 5,000 | 18.515 | 0.086 | 0.069 | 0.056 | 0.077 |
 | 10,000 | 52.075 | 0.221 | 0.205 | 0.188 | 0.207 |
 | 20,000 | 156.295 | 0.566 | 0.547 | 0.531 | 0.531 |
-**Key Observation**: For n=20,000 elements, compiled languages complete assembly in **under 0.6 milliseconds** - fast enough for interactive simulations.
+At n=20,000, C, C++, Fortran, and Rust each take less than 0.6 ms in the timed assembly call.
 ## Implementation Highlights
 ### Core Algorithm
 All implementations follow the same mathematical procedure from Brenner & Scott Section 0.4:
@@ -57,7 +54,7 @@ For each element e = 1 to n:
     Add K_local to global K at positions [e-1:e, e-1:e]
     Add F_local to global F
 ```
-Where h = 1/n is the element size, ensuring **O(n) assembly complexity** as each element is visited exactly once.
+Here h = 1/n. The element loop performs O(n) work, but the dense stiffness matrix occupies O(n²) storage.
 ### Language-Specific Implementations
 ### **Fortran**: Natural Column-Major Order
 ```fortran
@@ -70,7 +67,7 @@ do e = 2, n
     K(i+1, i+1) = K(i+1, i+1) + k_local
 enddo
 ```
-**Advantage**: Natural matrix notation matches mathematical formulation exactly. Column-major storage aligns with LAPACK conventions.
+The Fortran wrapper receives column-major NumPy arrays.
 **Performance**: 0.531 ms (tied for fastest)
 ### **Rust**: Memory-Safe Systems Programming
 ```rust
@@ -83,7 +80,7 @@ for e in 2..=n {
     // Symmetric entries...
 }
 ```
-**Advantage**: Zero-cost abstractions with compile-time memory safety guarantees. No runtime overhead for bounds checking in release mode.
+The Rust extension accesses NumPy arrays through PyO3 and the numpy crate.
 **Performance**: 0.531 ms (tied for fastest)
 ### **C**: Explicit Low-Level Control
 ```c
@@ -98,7 +95,7 @@ for (int e = 2; e <= n; e++) {
     Kcur += n;
 }
 ```
-**Advantage**: Direct pointer manipulation eliminates 2D index calculations. Manual memory control allows cache-aware optimizations.
+The C function writes into arrays supplied by its ctypes wrapper.
 **Performance**: 0.566 ms
 ### **C++**: High-Level with pybind11
 ```cpp
@@ -111,9 +108,9 @@ for (int e = 2; e <= n; e++) {
     // Symmetric assembly...
 }
 ```
-**Advantage**: Seamless NumPy integration via pybind11. Direct buffer access without Python overhead.
+The C++ extension uses pybind11 to access the supplied NumPy buffers.
 **Performance**: 0.547 ms
-### **Python**: Vectorized NumPy
+### **Python**: NumPy Arrays and Python Loops
 ```python
 for e in range(1, n+1):
     i_left = e - 1
@@ -126,39 +123,18 @@ for e in range(1, n+1):
         K[idx_left, idx_right] -= k_local
         K[idx_right, idx_left] -= k_local
 ```
-**Advantage**: Clear, readable code that closely matches mathematical notation. Easy prototyping and debugging.
+The Python reference allocates its own arrays and assembles them in Python loops. Its benchmark wrapper then copies the results into the supplied buffers.
 **Performance**: 156.295 ms (baseline for comparison)
-## Analysis & Insights
-### The Julia Performance Puzzle
-**Expected**: Julia should match Fortran/C performance (~0.5 ms)  
-**Actual**: Julia is 3470× slower than Fortran (1845 ms vs 0.531 ms)
-**Root Cause Analysis**:
-1. **PyCall Overhead**: Boundary crossing between Julia and Python dominates runtime
-2. **JIT Compilation Cost**: First-call compilation time included in benchmarks  
-3. **Array Copying**: Julia allocates its own arrays, then copies to/from NumPy
-**Key Insight**: Julia excels for pure Julia workflows but has significant FFI overhead. For Python integration of simple kernels, native extensions (C/C++/Fortran/Rust) are more appropriate.
-### Why C++ Outperforms C at Small Scales
-At smaller problem sizes (n=500-1000), **C++ is measurably faster than C**:
-- n=500: C++ (0.010 ms) vs C (0.023 ms) - **2.3× faster**
-- n=1000: C++ (0.011 ms) vs C (0.024 ms) - **2.2× faster**
-**Explanation**: 
-- **pybind11 optimization**: Direct NumPy buffer protocol access eliminates copying
-- **ctypes overhead**: Requires additional type checking and marshalling
-- **Compiler optimizations**: pybind11 enables more aggressive inlining
-At large scales (n≥5000), both converge as assembly time dominates over FFI overhead.
-### Fortran & Rust: Different Paths, Same Performance
-Despite radically different design philosophies, Fortran and Rust achieve **identical performance** (0.531 ms):
-**Fortran's Advantages:**
-- 60+ years of compiler optimization for numerical computing
-- Column-major arrays match mathematical conventions
-- Natural SIMD vectorization by modern compilers
-**Rust's Advantages:**
-- Zero-cost abstractions with memory safety
-- Ownership system eliminates runtime checks in release mode
-- Modern LLVM backend with aggressive optimization
-**Conclusion**: For numerical kernels, both old (Fortran) and new (Rust) can achieve optimal performance. Choose based on ecosystem and safety requirements.
+## Timing Scope
+
+The wrappers accept preallocated arrays, but their internal work differs. C, C++, Fortran, and Rust fill the supplied buffers. Python and Julia allocate temporary arrays and copy the results back. Those costs are included in their timings.
+
+`benchmark_implementation` makes a warmup call before timing. Allocation and buffer reset for the supplied arrays happen outside the timed interval. The Julia result therefore needs a separate allocation/copy benchmark before attributing its runtime to the language or its compiler.
+
+At n=20,000, the C, C++, Fortran, and Rust times are close. From n=10,000 to 20,000 they grow by about 2.6–2.8 times, rather than exactly twice. The O(n) element loop does not imply that the measured wrapper time scales perfectly linearly.
+
 ## Correctness Verification
-All implementations produce **bitwise identical results** (max difference < 10⁻¹²):
+The benchmark compares each loaded implementation with the Python reference using a maximum absolute difference of 10⁻¹²:
 ```python
 # Verification results for n=100
 Fortran: Max diff in K = 0.00e+00, F = 0.00e+00
@@ -170,7 +146,7 @@ Julia:   Max diff in K = 0.00e+00, F = 0.00e+00
 All implementations verified correct!
 ```
 ### Convergence Study
-Error norms match theoretical predictions:
+For a compatible smooth manufactured solution, the expected P1 rates are:
 - **L² error**: $\|u - u_h\|_{L^2} = O(h^2)$
 - **Energy error**: $\|u - u_h\|_E = O(h)$
 - **Max error**: $\|u - u_h\|_\infty = O(h^2)$
@@ -210,104 +186,20 @@ cd rust && maturin develop --release
 pip install julia
 python3 -c "import julia; julia.install()"
 ```
-## Key Insights & Lessons Learned
-### 1. **Theoretical Complexity Matches Practice**
-All compiled implementations exhibit perfect **O(n) scaling**, exactly as predicted by theory. The element-wise assembly loop visits each element once, and this algorithmic structure is preserved across all languages.
-**Evidence**: Doubling n from 10,000 to 20,000 elements:
-- Fortran: 0.188 ms → 0.531 ms (2.82× increase)
-- Rust: 0.207 ms → 0.531 ms (2.57× increase)  
-- C++: 0.205 ms → 0.547 ms (2.67× increase)
-- C: 0.221 ms → 0.566 ms (2.56× increase)
-All ratios cluster near the theoretical 2× for linear scaling.
-### 2. **Language Abstraction Level ≠ Performance**
-Modern compilers eliminate abstraction penalties:
-**High-level abstractions** (Rust's iterators, C++'s buffer protocol) compile to **identical machine code** as low-level C pointer arithmetic. The performance differences stem from FFI overhead, not the language itself.
-### 3. **Memory Layout Matters for Caching**
-**Row-major** (C, C++, Rust, Python) vs **column-major** (Fortran) affects memory access patterns:
-Fortran's column-major storage aligns with its nested loop structure:
-```fortran
-do e = 2, n
-    K(i, i)     = K(i, i) + k_local     ! Sequential in memory
-    K(i+1, i)   = K(i+1, i) - k_local   ! Sequential in memory
-```
-Row-major languages must carefully structure loops to maintain cache locality.
-### 4. **Foreign Function Interface Design Philosophy**
-Performance differences at small scales highlight FFI design tradeoffs:
-| Interface | Philosophy | Small n | Large n |
-|-----------|-----------|---------|---------|
-| **pybind11** (C++) | "Zero copy" buffer protocol | Fast | Fast |
-| **f2py** (Fortran) | Direct array passing | Fast | Fast |
-| **PyO3** (Rust) | Safe ownership transfer | Fast | Fast |
-| **ctypes** (C) | Dynamic type marshalling | Slow | Fast |
-| **PyJulia** (Julia) | Cross-runtime boundary | Very Slow | Slow |
-**Insight**: For hot-path numerical code, choose FFI systems designed for numerical computing (f2py, pybind11, PyO3) over general-purpose interfaces (ctypes, PyJulia).
-### 5. **Compiler Optimization Convergence**
-With `-O3` optimization, GCC (C/Fortran), Clang (C++), and LLVM (Rust) all achieve similar results. **The compiler matters more than the language** for numerical kernels.
-Key optimizations applied by all compilers:
-- Loop unrolling
-- SIMD vectorization (where applicable)
-- Register allocation
-- Dead code elimination
-### 6. **The 300× Speedup Barrier**
-The ~294× speedup represents the fundamental difference between:
-- **Interpreted Python loops**: Bytecode interpretation overhead per operation
-- **Compiled native code**: Direct machine instructions
-This factor appears consistently across numerical computing benchmarks and represents Python's convenience-performance tradeoff.
-### 7. **Mathematical Correctness Across Languages**
-All implementations produce **bitwise identical results** (max error < 10⁻¹²), demonstrating that:
-- IEEE 754 floating-point arithmetic is consistent across platforms
-- The assembly algorithm is deterministic
-- No numerical instabilities exist in this simple kernel
-This enables **reference implementation testing**: write once in Python, verify in all languages.
 ## Future Extensions
 ### Potential Next Steps
 1. **Parallel Assembly**: Add OpenMP versions for C/C++/Fortran
-2. **GPU Acceleration**: CUDA/HIP implementation for massive speedup
+2. **GPU Acceleration**: Compare CUDA/HIP assembly with the CPU kernels
 3. **2D Extension**: Triangular elements for Poisson equation
 4. **Higher-Order Elements**: Piecewise quadratic basis functions
 5. **Adaptive Refinement**: Implement Section 0.8 algorithms
 6. **Sparse Matrix Formats**: CSR/COO for efficiency at scale
-## Conclusion
-This benchmark demonstrates that **compiled languages provide 280-290× speedup** over pure Python for FEM assembly kernels, confirming theoretical expectations about the cost of interpreted vs. compiled execution.
-### Language Selection Criteria
-For production FEM implementations, choose based on:
-**Fortran** - Best for:
-- Pure numerical computing projects
-- Interfacing with existing scientific libraries (LAPACK, BLAS)
-- Teams familiar with traditional scientific computing
-**Rust** - Best for:
-- Safety-critical applications
-- Modern software engineering practices
-- Projects requiring memory safety guarantees
-**C++** - Best for:
-- Python integration (pybind11 is excellent)
-- Access to extensive template libraries
-- Balance of performance and abstraction
-**C** - Best for:
-- Minimal dependencies and maximum portability
-- Embedded systems or resource-constrained environments
-- Interoperability with diverse platforms
-### Theoretical Validation
-The benchmark confirms Brenner & Scott's theoretical complexity analysis:
-- **Assembly complexity**: O(n) 
-- **Deterministic results**: All implementations produce identical matrices 
-- **Scalability**: Linear time growth with problem size
-### Practical Implications
-**For small problems** (n < 1000): Python overhead is negligible. Use Python for rapid development.
-**For medium problems** (1000 < n < 10000): Compiled extensions provide 100-200× speedup. Worth the implementation effort.
-**For large problems** (n > 10000): Compiled code is essential. Assembly time drops from minutes to milliseconds.
-### Most Important Finding
-**The language matters less than the algorithm.** All compiled implementations converge to similar performance because they:
-1. Follow the same mathematical procedure (Brenner & Scott Section 0.4)
-2. Maintain O(n) complexity through element-wise assembly
-3. Benefit from similar compiler optimizations
-The 294× speedup isn't from "clever tricks" - it's the fundamental difference between interpreted and compiled execution of the **same algorithm**.
-### Beyond This Benchmark
-Real FEM applications face bottlenecks in:
-- **Linear system solvers** (O(n³) for dense, O(n log n) for sparse iterative)
-- **Error estimation** and adaptive refinement
-- **Post-processing** and visualization
-Future work should benchmark these components, where the performance landscape may favor different languages and parallel computing becomes essential.
+## What the Comparison Shows
+
+At n=20,000, the saved C, C++, Fortran, and Rust timings are about 276–294 times faster than the Python wrapper. This is a comparison of these implementations and their allocation/copy behavior. It does not establish a general ranking of the languages.
+
+The next useful comparison would give every implementation the same allocation policy, then time the solve separately from assembly.
+
 ## Technical Specifications
 **Hardware**: WPI Turing Supercomputing Cluster  
 **OS**: Ubuntu 24.04  
@@ -328,7 +220,7 @@ Future work should benchmark these components, where the performance landscape m
 5. **PyO3 Documentation**: Rust/Python bindings - [pyo3.rs](https://pyo3.rs/)
 6. **PyJulia Documentation**: Julia/Python integration - [pyjulia.readthedocs.io](https://pyjulia.readthedocs.io/)
 ## Acknowledgments
-This project was developed as part of the Computational Physics Independent Study Project (ISP) at Worcester Polytechnic Institute, combining theoretical understanding from Brenner & Scott's textbook with practical performance engineering across multiple programming languages.
+Developed for the Computational Physics independent study at WPI.
 **Course**: PH 4000 - Computational Physics  
 **Institution**: Worcester Polytechnic Institute  
 **Advisor**: Dr. William Sanguinet  

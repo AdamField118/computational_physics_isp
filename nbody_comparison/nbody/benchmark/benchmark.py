@@ -353,7 +353,7 @@ def benchmark_rust(n_particles: int, n_steps: int, config: NBodyConfig) -> Bench
     )
 
 def run_benchmark_suite() -> List[BenchmarkResult]:
-    """Run comprehensive benchmark suite"""
+    """Run the configured particle counts and step counts"""
     print("=" * 70)
     print("N-Body Simulation Benchmark Suite")
     print("=" * 70)

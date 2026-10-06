@@ -147,7 +147,7 @@ def assemble_system(mesh, kappa: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]
     """
     Assemble global stiffness matrix K and load vector F
     
-    Automatically detects element type (P1 or P2) from mesh.elements.shape[1]
+    Checks mesh.elements.shape[1] and assembles three-node P1 elements.
     
     Args:
         mesh: Mesh object
@@ -172,8 +172,6 @@ def assemble_system_p1(mesh, kappa: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarr
     """
     Assemble system for P1 (linear) elements
     
-    THIS IS YOUR EXISTING CODE - don't change it!
-    Just rename your current assemble_system to this.
     """
     n = mesh.n_nodes
     
@@ -193,7 +191,7 @@ def assemble_system_p1(mesh, kappa: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarr
         # Get convergence at element nodes
         kappa_elem = kappa[nodes_idx]  # (3,)
         
-        # Compute element matrices - THESE ARE YOUR P1 FUNCTIONS
+        # Compute P1 element stiffness and load
         K_elem = compute_element_stiffness(coords)       # P1 version
         F_elem = compute_element_load(coords, kappa_elem)  # P1 version
         
@@ -616,7 +614,7 @@ class SinusoidalLens:
     """
     Manufactured solution for convergence testing
     
-    Perfect for validation because:
+    Properties of the test solution:
     - Smooth (C^infty)
     - Satisfies homogeneous Dirichlet BC exactly
     - Known exact solution and source

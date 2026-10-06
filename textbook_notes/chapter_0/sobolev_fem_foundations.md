@@ -2,12 +2,12 @@
 title: "FEM Foundations: Sobolev Spaces to Error Analysis"
 date: "2026-01-29"
 tags: "Notes"
-snippet: "Comprehensive mathematical foundations of the finite element method, from weak derivatives and Sobolev spaces through Galerkin approximation and error analysis."
+snippet: "Mathematical foundations of the finite element method, from weak derivatives and Sobolev spaces through Galerkin approximation and error analysis."
 ---
 
 # Finite Element Method: Mathematical Foundations
 
-These notes cover the rigorous mathematical framework underlying the finite element method, based on Brenner & Scott's *The Mathematical Theory of Finite Element Methods* (3rd edition). We build from Lebesgue spaces through Sobolev spaces to the complete variational framework.
+Notes on Lebesgue spaces, weak derivatives, and the variational formulation of FEM, following Brenner & Scott's *The Mathematical Theory of Finite Element Methods* (3rd edition).
 
 ## 1. The Model Problem
 
@@ -129,7 +129,7 @@ For $v \in H_0^1(\Omega)$ where $\Omega$ is bounded:
 
 $$\|v\|_{L^2} \leq C_P \|v'\|_{L^2} = C_P |v|_{H^1}$$
 
-**Consequence:** On $H_0^1$, the seminorm $|v|_{H^1}$ is equivalent to the full norm. This is crucial because it means the energy norm controls the $L^2$ norm.
+**Consequence:** On $H_0^1$, the seminorm $|v|_{H^1}$ is equivalent to the full norm. The energy norm therefore controls the $L^2$ norm.
 
 ### Sobolev Embedding (1D)
 
@@ -245,7 +245,7 @@ $$\|u - u_S\|_E = \min_{v \in S} \|u - v\|_E$$
 
 **The Galerkin solution is the best approximation to $u$ from $S$ in the energy norm.**
 
-This is remarkable: we automatically get the optimal approximation without explicitly minimizing.
+The Galerkin equations give the best approximation in the energy norm without a separate minimization step.
 
 ### Proof Sketch
 
@@ -308,7 +308,7 @@ $$\|u - u_I\|_E \leq Ch \|u''\|_{L^2}$$
 
 $$\|u - u_I\|_{L^2} \leq Ch^2 \|u''\|_{L^2}$$
 
-### Remarkable Property
+### Nodal Exactness
 
 For piecewise linears: $u_S = u_I$ when $f$ is piecewise constant.
 

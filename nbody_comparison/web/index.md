@@ -2,36 +2,36 @@
 title: "N-Body Gravitational Simulation"
 date: "2026-01-20"
 tags: "Project"
-snippet: "Multi-language performance comparison of N-body gravitational simulations across JAX (GPU), Fortran, Rust, Julia, C++, C, and Python with interactive visualizations and comprehensive analysis."
+snippet: "Multi-language performance comparison of N-body gravitational simulations across JAX (GPU), Fortran, Rust, Julia, C++, C, and Python with timing and energy-drift measurements."
 ---
 ## Project Overview
 
-This project implements identical gravitational N-body simulations across **seven programming languages** to explore performance characteristics, numerical accuracy, and language-specific optimizations.
+This project compares seven implementations of the same gravitational N-body problem, including NumPy and JAX versions in Python.
 
 ### Objectives
 
 - Implement the same N-body physics in multiple languages
 - Compare raw performance across CPU and GPU architectures  
 - Validate numerical accuracy across all implementations
-- Demonstrate modern scientific computing workflows
 
 ### Implementations
 
 - **JAX (GPU)** - GPU-accelerated with JIT compilation
 - **Fortran (OpenMP)** - CPU parallel with OpenMP directives
-- **Rust** - Modern systems language with zero-cost abstractions
-- **Julia** - High-performance dynamic language for scientific computing
+- **Rust** - PyO3 wrapper
+- **Julia** - PyJulia wrapper
 - **C++** - Modern C++ with pybind11 wrapper
 - **C** - Pure C with ctypes wrapper
 - **Python (NumPy)** - Baseline pure Python/NumPy
 
-### Key Results
+### Results in the Original Write-Up
 
-At **N=1000 particles**:
+The tables below are from the original write-up and differ from the checked-in `web/data/benchmark_results.json`. Use that file for comparisons from the saved run.
+
+At **N=1000 particles**, the original table reports:
 - JAX (GPU) is **1384× faster** than Python
 - JAX (GPU) is **17× faster** than Fortran (OpenMP)
-- Energy conservation: **< 0.01%** drift for all implementations
-- GPU crossover point: **N ≈ 75-100 particles**
+- The crossover depends on the CPU implementation and lies between the sampled particle counts
 
 ---
 
@@ -113,7 +113,7 @@ For each particle, we compute forces from all other particles:
 - N=100: 9,900 force pairs
 - N=1000: 999,000 force pairs
 
-This is why GPU acceleration provides massive speedup—it can evaluate all force pairs simultaneously.
+The pairwise calculation exposes parallel work for the GPU.
 
 ---
 
@@ -161,17 +161,11 @@ This is why GPU acceleration provides massive speedup—it can evaluate all forc
 
 *Speedup factors relative to Python (NumPy)*
 
-### Key Insights
-
-1. **GPU Advantage**: Nearly constant performance across problem sizes—GPU parallelism scales perfectly
-2. **CPU Scaling**: Clear O(N²) behavior as expected from direct summation
-3. **Crossover Point**: GPU becomes faster than CPU at N ≈ 75-100 particles
-4. **Fortran/Rust/Julia**: Comparable performance with OpenMP parallelization
-5. **Python**: 80-1400× slower due to interpreted overhead
+The GPU timing varies little over these problem sizes, while CPU timings rise with particle count. The crossover differs between CPU implementations; these measurements do not establish a hardware-independent threshold.
 
 ### Energy Conservation
 
-All implementations conserve energy to within acceptable bounds:
+The table reports relative energy drift:
 
 | N    | JAX   | Fortran | Rust  | Julia | C++   | C     | Python |
 |------|-------|---------|-------|-------|-------|-------|--------|
@@ -179,62 +173,22 @@ All implementations conserve energy to within acceptable bounds:
 | 100  | 0.046%| 0.022%  | 0.022%| 0.022%| 0.022%| 0.022%| 0.022% |
 | 1000 | 3.3%  | 3.9%    | 3.9%  | 3.2%  | 3.9%  | 4.3%  | 4.3%   |
 
-**Note:** Larger drift at N=1000 is expected for chaotic systems—still within acceptable range (< 5%).
+The larger drift at N=1000 needs a timestep-convergence check before drawing conclusions about accuracy.
 
 ---
 
-## Detailed Analysis
+## Interpreting the Timings
 
-### GPU vs CPU Performance
-
-**Why is GPU nearly constant?**
-
-The GPU has thousands of cores that can evaluate force pairs in parallel:
-- **N=10**: 90 force pairs → GPU underutilized
-- **N=1000**: 999,000 force pairs → All GPU cores busy, but still fast
-
-**CPU scaling:** Linear with N² as expected:
-- Fortran (N=1000 / N=10): 92× slower ≈ (1000/10)² = 100
-- Matches theoretical O(N²) complexity
-
-### Language Comparison
-
-**Fortran vs C vs C++:**
-- Fortran fastest due to OpenMP parallelization
-- C and C++ are single-threaded in our implementation
-- Adding OpenMP to C/C++ would yield 4-8× speedup
-
-**Rust vs Julia:**
-- Very similar performance to Fortran
-- Modern languages competitive with established HPC languages
-- Easier syntax than C/Fortran for scientific computing
-
-**Python:**
-- Dramatically slower despite NumPy's C backend
-- Interpreted overhead dominates
-- Solution: Use JAX for GPU or compiled wrappers
-
-### Memory Bandwidth Analysis
-
-For N=1000, each timestep requires:
-- **Memory access**: ~44 KB
-- **JAX time**: 0.08 s
-- **Bandwidth**: ~550 MB/s
-
-This is far below GPU memory bandwidth (~900 GB/s).
-
-**Conclusion:** Compute-bound, not memory-bound—good GPU utilization.
-
----
+These timings include each implementation's wrapper and execution strategy. They do not isolate compiler optimizations, memory traffic, or Python-call overhead. Separating those costs would require profiling the individual kernels and transfers.
 
 ## Trajectory Visualizations
 
 ### Energy Conservation Plot
 ![Energy conservation over time](./nbody_comparison/web/data/energy_conservation.png)
 
-*Kinetic, potential, and total energy evolution—all implementations conserve energy*
+*Kinetic, potential, and total energy over the integration.*
 
-### Comprehensive Scaling Analysis
+### Scaling Analysis
 ![Scaling analysis across implementations](./nbody_comparison/web/data/comprehensive_scaling.png)
 
 *Four-panel analysis: time per step, speedup, energy conservation, and performance at N=1000*
@@ -242,7 +196,7 @@ This is far below GPU memory bandwidth (~900 GB/s).
 ### GPU Crossover Analysis
 ![GPU vs CPU crossover](./nbody_comparison/web/data/crossover_analysis.png)
 
-*GPU becomes faster than CPU at N ≈ 75-100 particles*
+*GPU and CPU timings across the sampled particle counts.*
 
 ---
 
@@ -359,7 +313,7 @@ Test: Same initial conditions (N=100, seed=42)
 | C              | -45.2342     | < 10⁻¹⁰           |
 | Python         | -45.2342     | < 10⁻¹⁰           |
 
-**Verdict:** All implementations agree to floating-point precision
+Use the accuracy tests below to check agreement at the chosen tolerance.
 
 ### Numerical Accuracy Test Suite
 
@@ -398,24 +352,6 @@ Complete test suite in `tests/test_accuracy.py`:
 - **NVIDIA L40S GPU**
 - **CUDA 12.9**
 - **12 CPU cores**
-
----
-
-## Key Learning Outcomes
-
-### Technical Skills
-1. **Numerical Methods**: Symplectic integrators, energy conservation
-2. **GPU Programming**: CUDA, JAX, parallelization strategies
-3. **Language Interoperability**: Python ↔ C/C++/Fortran/Rust/Julia
-4. **Performance Engineering**: Benchmarking, profiling, optimization
-5. **Scientific Visualization**: 2D/3D animations, interactive plots
-
-### Insights
-1. **GPU superiority for large N**: 17-1384× speedup
-2. **Symplectic integrators are crucial**: Energy conservation
-3. **Modern languages competitive**: Rust/Julia match Fortran performance
-4. **Vectorization is key**: NumPy 100× faster than pure Python
-5. **Problem size matters**: GPU crossover at N ≈ 100
 
 ---
 
@@ -491,7 +427,7 @@ computational_physics_isp/nbody_comparison/
 
 **Acknowledgments:**
 - WPI Turing Cluster for computational resources
-- JAX development team for outstanding GPU framework
+- JAX development team
 - Computational Physics community for open-source tools
 
 ---
@@ -506,5 +442,3 @@ All code, benchmarks, and raw data available at:
 **License:** MIT (code), CC BY 4.0 (documentation)
 
 ---
-
-*This project demonstrates the intersection of physics, mathematics, and computer science in modern scientific computing.*

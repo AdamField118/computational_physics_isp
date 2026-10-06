@@ -1,24 +1,6 @@
-# 1D Burgers Equation - Comprehensive Project Plan
-**Finite Volume Method Learning Project**
+# 1D Burgers Equation: Finite Volume Plan
 
----
-
-## Executive Summary
-
-**Objective**: Implement a production-quality 1D Burgers equation solver using finite volume methods to master shock capturing, Riemann solvers, flux limiters, and the foundations of computational fluid dynamics.
-
-**Timeline**: 2-3 weeks
-
-**Languages**: Fortran (computational kernel) + Python (driver/visualization)
-
-**Deliverables**:
-1. FVM solver with multiple Riemann solvers
-2. MUSCL reconstruction with TVD limiters
-3. Comprehensive validation suite
-4. Interactive web visualization
-5. Technical documentation
-
----
+A Fortran/Python solver for studying shocks, Riemann solvers, and flux limiters. This folder currently contains the plan and code sketches below.
 
 ## Mathematical Foundation
 
@@ -198,7 +180,7 @@ Typical: $\text{CFL} \in [0.5, 0.9]$ for stability.
 
 ## Implementation Plan
 
-### Phase 1: Infrastructure (Days 1-2)
+### Phase 1: Infrastructure
 
 #### Fortran Modules
 
@@ -294,7 +276,7 @@ class BurgersSolver1D:
         pass
 ```
 
-### Phase 2: Riemann Solvers (Days 3-4)
+### Phase 2: Riemann Solvers
 
 **`riemann_solvers.f90`**
 ```fortran
@@ -343,7 +325,7 @@ end module
 
 **Testing**: Compare all three solvers on Riemann problem.
 
-### Phase 3: MUSCL Reconstruction (Days 5-6)
+### Phase 3: MUSCL Reconstruction
 
 **`reconstruction.f90`**
 ```fortran
@@ -407,7 +389,7 @@ end module
 
 **Testing**: Verify second-order convergence on smooth problems.
 
-### Phase 4: Time Integration (Days 7-8)
+### Phase 4: Time Integration
 
 **`time_stepping.f90`**
 ```fortran
@@ -496,7 +478,7 @@ contains
 end module
 ```
 
-### Phase 5: Python Interface (Day 9)
+### Phase 5: Python Interface
 
 **`python_interface.f90`**
 ```fortran
@@ -569,7 +551,7 @@ contains
 end module
 ```
 
-### Phase 6: Validation Suite (Days 10-12)
+### Phase 6: Validation Suite
 
 **Test cases to implement**:
 
@@ -662,7 +644,7 @@ def test_conservation():
     assert abs(mass_final - mass_init) < 1e-12
 ```
 
-### Phase 7: Visualization (Days 13-14)
+### Phase 7: Visualization
 
 **`python/visualization.py`**
 ```python
@@ -854,14 +836,6 @@ $$u(x, t) = \frac{1}{2}(u_L + u_R) - \frac{1}{2}(u_R - u_L) \tanh\left(\frac{(u_
 | Smooth | $O(\Delta x)$ | $O(\Delta x^2)$ | $O(\Delta x^2)$ |
 | Shock | $O(\Delta x^{1/2})$ | $O(\Delta x)$ | $O(\Delta x)$ |
 
-### Performance Targets
-
-| Grid size | Time steps | Wall time (Fortran) | Speedup vs Python |
-|-----------|------------|---------------------|-------------------|
-| 100 | ~500 | < 0.01 s | ~50× |
-| 1,000 | ~5,000 | < 0.1 s | ~100× |
-| 10,000 | ~50,000 | < 5 s | ~200× |
-
 ### Visual Outputs
 
 1. **Shock formation animation** (sine wave → shock)
@@ -875,10 +849,10 @@ $$u(x, t) = \frac{1}{2}(u_L + u_R) - \frac{1}{2}(u_R - u_L) \tanh\left(\frac{(u_
 ## Deliverables
 
 ### Code
-- [ ] Complete Fortran FVM solver (6 modules, ~800 lines)
-- [ ] Python driver and analysis tools (~400 lines)
+- [ ] Complete Fortran FVM solver
+- [ ] Python driver and analysis tools
 - [ ] f2py interface
-- [ ] Comprehensive test suite (>90% coverage)
+- [ ] Tests for fluxes, conservation, and convergence
 
 ### Documentation
 - [ ] Mathematical derivation document
@@ -898,42 +872,6 @@ $$u(x, t) = \frac{1}{2}(u_L + u_R) - \frac{1}{2}(u_R - u_L) \tanh\left(\frac{(u_
 - [ ] Implementation highlights
 - [ ] Results and validation
 - [ ] Comparison to FEM approach
-
----
-
-## Learning Objectives
-
-By completing this project, you will master:
-
-### Numerical Methods
-- [x] Conservative finite volume discretization
-- [x] Riemann solver theory and implementation
-- [x] High-resolution schemes (MUSCL)
-- [x] TVD limiters (minmod, van Leer, superbee)
-- [x] Time integration (RK2, RK3, SSP methods)
-- [x] CFL condition and stability
-
-### Computational Physics
-- [x] Shock capturing without tracking
-- [x] Entropy conditions and uniqueness
-- [x] Nonlinear wave propagation
-- [x] Viscous vs inviscid behavior
-- [x] Conservation properties
-
-### Software Engineering
-- [x] Fortran-Python hybrid architecture
-- [x] f2py interfacing
-- [x] Modular code design
-- [x] Comprehensive testing
-- [x] Scientific visualization
-- [x] Performance optimization
-
-### FVM Fundamentals
-- [x] Cell-centered vs node-centered
-- [x] Flux functions
-- [x] Upwind methods
-- [x] Limiters and TVD property
-- [x] Convergence theory
 
 ---
 
@@ -958,53 +896,9 @@ By completing this project, you will master:
 
 ### Bridge to CFD
 - [ ] Vector Burgers → Euler equations
-- [ ] Shallow water equations (next project!)
+- [ ] Shallow water equations
 - [ ] Add source terms
 - [ ] Moving to systems
-
----
-
-## Timeline
-
-### Week 1: Foundation
-- **Day 1-2**: Infrastructure (types, grid, Python class)
-- **Day 3-4**: Riemann solvers (Godunov, LF, Roe)
-- **Day 5-6**: MUSCL reconstruction + limiters
-- **Day 7**: Integration
-
-### Week 2: Validation & Polish
-- **Day 8-9**: Time stepping + f2py interface
-- **Day 10-11**: Test suite (4 benchmarks)
-- **Day 12-13**: Visualization tools
-- **Day 14**: Documentation + blog post
-
-### Week 3 (Optional): Advanced Topics
-- **Day 15-16**: WENO reconstruction
-- **Day 17-18**: 2D extension
-- **Day 19-21**: Web interface + interactive demos
-
----
-
-## Success Criteria
-
-### Must Have
-- [x] All 4 benchmarks pass
-- [x] Second-order convergence demonstrated
-- [x] Conservation to machine precision
-- [x] No spurious oscillations with limiters
-- [x] Fortran >50× faster than pure Python
-
-### Should Have
-- [ ] Interactive visualizations
-- [ ] Complete documentation
-- [ ] Web demo deployed
-- [ ] Blog post written
-
-### Nice to Have
-- [ ] WENO implementation
-- [ ] 2D extension
-- [ ] Published on GitHub
-- [ ] Video explanation
 
 ---
 
@@ -1031,8 +925,6 @@ By completing this project, you will master:
 
 ---
 
-## Notes
+## Scope
 
-This project is the **essential foundation** for all FVM work. Burgers contains all the key concepts (shocks, Riemann solvers, limiters) without the complexity of systems. Master this before moving to shallow water or Navier-Stokes.
-
-**Key insight**: The numerical flux $F_{i+1/2}$ is the heart of FVM. Everything else (reconstruction, time stepping) supports computing this flux accurately and efficiently.
+Burgers' equation isolates nonlinear wave steepening and shock formation in a scalar problem. The numerical flux, reconstruction, and time integrator can be tested separately before extending the method to shallow water.

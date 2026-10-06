@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive multi-language FEM benchmark
+Multi-language FEM assembly benchmark
 Saves results as JSON for analysis and visualization
 
 Usage:
@@ -198,7 +198,7 @@ class BenchmarkRunner:
             lib_path = c_dir / 'fem_c.so'
             
             if not lib_path.exists():
-                print(f"⚠️  C library not found at {lib_path}")
+                print(f"Warning:  C library not found at {lib_path}")
                 return None
             
             lib = CDLL(str(lib_path))
@@ -217,7 +217,7 @@ class BenchmarkRunner:
             
             return c_assemble_wrapper
         except Exception as e:
-            print(f"⚠️  Error loading C library: {e}")
+            print(f"Warning:  Error loading C library: {e}")
             return None
     
     def _load_c_serial(self):
@@ -255,14 +255,14 @@ class BenchmarkRunner:
         fortran_dir = Path(__file__).parent.parent / 'fortran'
         
         if not fortran_dir.exists():
-            print(f"⚠️  Fortran directory not found at {fortran_dir}")
+            print(f"Warning:  Fortran directory not found at {fortran_dir}")
             return None
         
         sys.path.insert(0, str(fortran_dir))
         
         fortran_modules = list(fortran_dir.glob('fem_fortran*.so'))
         if not fortran_modules:
-            print(f"⚠️  Fortran module not found in {fortran_dir}")
+            print(f"Warning:  Fortran module not found in {fortran_dir}")
             return None
         
         try:
@@ -270,7 +270,7 @@ class BenchmarkRunner:
             # f2py requires keyword arguments for proper dimension checking
             return lambda n, f_vals: fem_fortran.assemble_system(n=n, f_vals=f_vals)
         except ImportError as e:
-            print(f"⚠️  Failed to import Fortran module: {e}")
+            print(f"Warning:  Failed to import Fortran module: {e}")
             return None
     
     def _load_fortran_serial(self):
@@ -291,7 +291,7 @@ class BenchmarkRunner:
             import fem_cpp
             return fem_cpp.assemble_system
         except ImportError as e:
-            print(f"⚠️  C++ module not found: {e}")
+            print(f"Warning:  C++ module not found: {e}")
             return None
     
     def _load_cpp_serial(self):
@@ -316,7 +316,7 @@ class BenchmarkRunner:
             
             return julia_wrapper
         except Exception as e:
-            print(f"⚠️  Failed to load Julia: {e}")
+            print(f"Warning:  Failed to load Julia: {e}")
             return None
     
     def _load_julia_serial(self):
@@ -346,7 +346,7 @@ class BenchmarkRunner:
             
             return rust_wrapper
         except ImportError as e:
-            print(f"⚠️  Rust module not found: {e}")
+            print(f"Warning:  Rust module not found: {e}")
             return None
     
     def _load_rust_serial(self):

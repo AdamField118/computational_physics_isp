@@ -1,27 +1,6 @@
-# 2D Shallow Water Equations - Comprehensive Project Plan
-**Production-Quality FVM for Geophysical Flows**
+# 2D Shallow Water: Finite Volume Plan
 
----
-
-## Executive Summary
-
-**Objective**: Implement a robust, well-balanced finite volume solver for the 2D shallow water equations, demonstrating HLL/HLLC Riemann solvers, source term balancing, and wet/dry front treatment.
-
-**Timeline**: 3-4 weeks
-
-**Prerequisites**: Completed 1D Burgers project (Riemann solvers, MUSCL, limiters)
-
-**Languages**: Fortran (computational engine) + Python (driver/analysis) + JavaScript (web viz)
-
-**Deliverables**:
-1. 2D FVM solver with well-balanced schemes
-2. HLL and HLLC Riemann solvers for systems
-3. Hydrostatic reconstruction for wet/dry
-4. Benchmark validation suite (4 test cases)
-5. Interactive 2D visualization
-6. Technical documentation
-
----
+A planned extension of the Burgers project to a system of conservation laws, with bathymetry and wet/dry fronts. This folder currently contains the plan and code sketches below.
 
 ## Mathematical Foundation
 
@@ -280,7 +259,7 @@ Typical: $\text{CFL} = 0.5$ for stability.
 
 ## Implementation Plan
 
-### Phase 1: Infrastructure (Days 1-3)
+### Phase 1: Infrastructure
 
 #### Fortran Modules
 
@@ -516,7 +495,7 @@ def circular_dam_break(grid, h_inner: float, h_outer: float,
     return h0, hu0, hv0
 ```
 
-### Phase 2: Riemann Solvers (Days 4-6)
+### Phase 2: Riemann Solvers
 
 **`riemann_solvers.f90`**
 ```fortran
@@ -693,7 +672,7 @@ contains
 end module
 ```
 
-### Phase 3: Well-Balanced Scheme (Days 7-9)
+### Phase 3: Well-Balanced Scheme
 
 **`well_balanced.f90`**
 ```fortran
@@ -805,7 +784,7 @@ contains
 end module
 ```
 
-### Phase 4: Time Stepping (Days 10-12)
+### Phase 4: Time Stepping
 
 **`time_stepping.f90`**
 ```fortran
@@ -952,7 +931,7 @@ contains
 end module
 ```
 
-### Phase 5: Validation Suite (Days 13-16)
+### Phase 5: Validation Suite
 
 #### Test 1: Lake at Rest
 ```python
@@ -1067,7 +1046,7 @@ def test_thacker_basin():
     print(f"✓ Thacker basin L² error: {L2_error:.6e}")
 ```
 
-### Phase 6: Visualization (Days 17-19)
+### Phase 6: Visualization
 
 **`python/visualization.py`**
 ```python
@@ -1174,7 +1153,7 @@ def plot_cross_section(solver, h, y_slice, title='Cross Section'):
     return fig, ax
 ```
 
-### Phase 7: Web Visualization (Days 20-21)
+### Phase 7: Web Visualization
 
 **Interactive 2D visualization using Three.js**:
 
@@ -1268,21 +1247,11 @@ class ShallowWaterViz {
 | Shock | $O(\Delta x)$ | $O(\Delta x)$ |
 | Contact | $O(\Delta x^{1/2})$ | $O(\Delta x)$ |
 
-### Performance
-
-| Grid | Time steps | Wall time | Speedup vs Python |
-|------|------------|-----------|-------------------|
-| 50×50 | ~1,000 | 1 s | ~100× |
-| 100×100 | ~4,000 | 10 s | ~150× |
-| 200×200 | ~16,000 | 2 min | ~200× |
-
----
-
 ## Deliverables
 
 ### Code
-- [ ] Fortran solver (8 modules, ~1500 lines)
-- [ ] Python interface (~600 lines)
+- [ ] Fortran solver
+- [ ] Python interface
 - [ ] Test suite (4 benchmarks)
 - [ ] Visualization tools
 
@@ -1302,22 +1271,6 @@ class ShallowWaterViz {
 - [ ] Well-balanced schemes explained
 - [ ] Validation results
 - [ ] Connection to 1D Burgers
-
----
-
-## Learning Objectives
-
-By completing this project, you will master:
-
-- [x] **Hyperbolic systems** (eigenvalues, characteristics)
-- [x] **HLL/HLLC Riemann solvers**
-- [x] **Well-balanced schemes** (critical for geophysical flows)
-- [x] **Source term discretization**
-- [x] **Wet/dry treatment** (hydrostatic reconstruction)
-- [x] **2D finite volume assembly**
-- [x] **SSP time stepping**
-- [x] **Conservation properties**
-- [x] **Production-quality FVM**
 
 ---
 
@@ -1343,38 +1296,6 @@ By completing this project, you will master:
 
 ---
 
-## Success Criteria
-
-### Must Have
-- [x] All 4 benchmarks pass
-- [x] Lake at rest to machine precision
-- [x] Positive depth always
-- [x] Mass conservation exact
-- [x] No spurious oscillations
-
-### Should Have
-- [ ] Interactive 3D visualization
-- [ ] Complete documentation
-- [ ] Blog post published
-- [ ] Web demo deployed
-
-### Nice to Have
-- [ ] AMR implementation
-- [ ] Real tsunami simulation
-- [ ] Video presentation
-- [ ] GitHub release
-
----
-
-## Timeline
-
-**Week 1**: Infrastructure + Riemann solvers
-**Week 2**: Well-balanced schemes + time stepping
-**Week 3**: Validation + visualization
-**Week 4**: Polish + documentation + extensions
-
----
-
 ## Resources
 
 ### Textbooks
@@ -1391,4 +1312,4 @@ By completing this project, you will master:
 - GeoClaw (production shallow water solver)
 - ANUGA (tsunami modeling)
 
-This project demonstrates **production-quality FVM** with all the essential techniques for real geophysical modeling. It builds directly on 1D Burgers while introducing system solvers and well-balanced schemes—the foundations of modern CFD.
+The main checks are preservation of a lake at rest, nonnegative water depth, and mass conservation during dam-break tests.
