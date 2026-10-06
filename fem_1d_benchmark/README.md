@@ -18,7 +18,7 @@ The Makefile provides the compiled-language workflow:
 make build
 make test
 make benchmark
-make dashboard
+make plots
 ```
 
 `make build` calls `build.sh`. The compiled extensions require their respective compilers and Python bindings: f2py for Fortran, pybind11 for C++, PyO3/maturin for Rust, and PyJulia for Julia. The C wrapper uses ctypes.
@@ -35,9 +35,9 @@ make dashboard
 | `rust/src/lib.rs` | Rust implementation |
 | `benchmark/benchmark.py` | Benchmark used by the Makefile |
 | `benchmark/benchmark_all.py` | Alternate benchmark driver |
-| `benchmark/visualize.py` | HTML dashboard generator |
+| `benchmark/visualize.py` | Static plots and Markdown timing tables |
 | `results/fem_benchmark_results.json` | Saved timings |
-| `web/fem_1d_benchmark_project.md` | Benchmark write-up |
+| `notes/benchmark.md` | Benchmark write-up |
 
 ## What Is Timed
 
@@ -59,3 +59,9 @@ Agreement with the Python reference checks cross-language assembly consistency. 
 - pybind11 docs: https://pybind11.readthedocs.io/
 - PyJulia: https://pyjulia.readthedocs.io/
 - PyO3: https://pyo3.rs/
+
+## Notes and figures
+
+- [Benchmark discussion](notes/benchmark.md)
+- [Full timing table](results/benchmark_summary.md)
+- [Timing figure](results/assembly_comparison.png)

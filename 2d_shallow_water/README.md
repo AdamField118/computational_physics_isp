@@ -1153,80 +1153,9 @@ def plot_cross_section(solver, h, y_slice, title='Cross Section'):
     return fig, ax
 ```
 
-### Phase 7: Web Visualization
+### Phase 7: Surface Animation
 
-**Interactive 2D visualization using Three.js**:
-
-```javascript
-// web/shallow_water_viz.js
-class ShallowWaterViz {
-    constructor(containerId, data) {
-        this.container = document.getElementById(containerId);
-        this.data = data;  // {times, h, hu, hv, X, Y, bathymetry}
-        
-        this.setupScene();
-        this.createMesh();
-        this.setupControls();
-        this.animate();
-    }
-    
-    setupScene() {
-        this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(
-            75, this.container.offsetWidth / this.container.offsetHeight, 0.1, 1000
-        );
-        this.renderer = new THREE.WebGLRenderer({antialias: true});
-        this.renderer.setSize(this.container.offsetWidth, this.container.offsetHeight);
-        this.container.appendChild(this.renderer.domElement);
-        
-        this.camera.position.set(50, 50, 100);
-        this.camera.lookAt(0, 0, 0);
-        
-        // Lighting
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(50, 100, 50);
-        this.scene.add(light);
-    }
-    
-    createMesh() {
-        const nx = this.data.X.length;
-        const ny = this.data.X[0].length;
-        
-        const geometry = new THREE.PlaneGeometry(nx, ny, nx-1, ny-1);
-        const material = new THREE.MeshPhongMaterial({
-            color: 0x00aaff,
-            side: THREE.DoubleSide,
-            wireframe: false
-        });
-        
-        this.waterMesh = new THREE.Mesh(geometry, material);
-        this.scene.add(this.waterMesh);
-        
-        // Update vertices for initial state
-        this.updateMesh(0);
-    }
-    
-    updateMesh(timeIndex) {
-        const h = this.data.h[timeIndex];
-        const vertices = this.waterMesh.geometry.attributes.position.array;
-        
-        for (let i = 0; i < h.length; i++) {
-            for (let j = 0; j < h[0].length; j++) {
-                const index = i * h[0].length + j;
-                vertices[index * 3 + 2] = h[i][j];  // Set z to depth
-            }
-        }
-        
-        this.waterMesh.geometry.attributes.position.needsUpdate = true;
-        this.waterMesh.geometry.computeVertexNormals();
-    }
-    
-    animate() {
-        requestAnimationFrame(() => this.animate());
-        this.renderer.render(this.scene, this.camera);
-    }
-}
-```
+Store `times`, `h`, `hu`, `hv`, `X`, `Y`, and `bathymetry` for each run. For a selected time index, plot a surface with horizontal coordinates `(X, Y)` and vertical coordinate `h`. Use the same grid connectivity for each frame. To show free-surface elevation instead of depth, plot `h + bathymetry` and label it accordingly. Save the animation locally with Matplotlib.
 
 ---
 
@@ -1263,7 +1192,7 @@ class ShallowWaterViz {
 
 ### Visualizations
 - [ ] 4 benchmark animations
-- [ ] Interactive 3D demo
+- [ ] Saved 3D surface animation
 - [ ] Comparison plots (HLL vs HLLC)
 
 ### Blog Post

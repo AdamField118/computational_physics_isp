@@ -122,7 +122,7 @@ F_i = ∫_K f φᵢ dx ≈ |det(B_K)| × Σ wq f(xq) φᵢ(xq)
 - Gradient transformation: `∇φ_phys = (B_K⁻¹)ᵀ ∇φ_ref`
 - 3-point Gauss quadrature for degree-2 accuracy
 
-### Python Frontend (Convenience)
+### Python Driver
 
 - Mesh generation (Triangle library)
 - Error computation (L², H¹, L∞ norms)
@@ -208,3 +208,8 @@ Planned enhancements:
 Adam Field  
 Worcester Polytechnic Institute  
 Computational Physics ISP
+## Notes
+
+- [Derivation and original results](notes/poisson.md)
+- [Full saved convergence snapshot](notes/convergence_snapshot.md)
+- [Weak formulation](THEORY.md)

@@ -1,11 +1,11 @@
----
-title: "Chapter 4 Exercises: Transformation Theory and Implementation"
-date: "2026-01-30"
-tags: "Exercises"
-snippet: "Essential exercises on affine transformations, reference elements, mesh quality, and numerical conditioning for finite element implementation."
----
-
 # Chapter 4: Finite Element Spaces - Exercises
+
+Chapter 4 Exercises: Transformation Theory and Implementation
+
+Date: 2026-01-30
+Topics: Exercises
+
+Essential exercises on affine transformations, reference elements, mesh quality, and numerical conditioning for finite element implementation.
 
 ## Exercise 4.x.11: Reference Triangle Interpolation
 
@@ -98,9 +98,9 @@ $$\widehat{K} = \frac{1}{2}\begin{pmatrix}
 
 This is the **fundamental building block** for all 2D FEM assembly!
 
-### Interactive Visualization: Reference Triangle Computation
+### Worked Example: Reference Triangle Computation
 
-[codeContainer](./textbook_notes/chapter_4/ex_11_reference_triangle.js)
+[Worked example and static figure](examples.md#reference-stiffness)
 
 ## Exercise 4.x.10: Minimum Angle Condition
 
@@ -173,9 +173,9 @@ which proves non-degeneracy with $\gamma = 3/\sin(\theta_0)$.
 
 **Mesh generation rule**: Avoid angles less than $20°$ in practice.
 
-### Interactive Visualization: Angle Checker
+### Worked Example: Angle Checker
 
-[codeContainer](./textbook_notes/chapter_4/ex_10_angle_checker.js)
+[Worked example and static figure](examples.md#mesh-quality)
 
 ## Exercise 4.x.5: Homogeneity Argument
 
@@ -250,9 +250,9 @@ $$|v|_{H^m(K)} \leq \widehat{C} h_K^{s-m} |v|_{H^s(K)}$$
 
 **Key insight**: The $h_K^{s-m}$ factor with $s < m$ gives $h_K^{-(\text{positive})}$, which blows up as $h \to 0$. This is why it's called an "inverse" inequality.
 
-### Interactive Visualization: Homogeneity Scaling
+### Worked Example: Homogeneity Scaling
 
-[codeContainer](./textbook_notes/chapter_4/ex_5_homogeneity.js)
+[Worked example and static figure](examples.md#homogeneity)
 
 ## Exercise 4.x.17: Condition Number of Stiffness Matrix
 
@@ -317,9 +317,9 @@ For 2D problems on a quasi-uniform mesh:
 - Halving $h$: $4\times$ worse conditioning, $2\times$ more CG iterations
 - Preconditioning is **essential** for fine meshes
 
-### Interactive Visualization: Condition Number Demo
+### Worked Example: Condition Number Demo
 
-[codeContainer](./textbook_notes/chapter_4/ex_17_condition_number.js)
+[Worked example and static figure](examples.md#conditioning)
 
 ## Exercise 4.x.21: Bilinear Quadrilateral Map
 
@@ -383,9 +383,9 @@ $$\int_K f(x,y) \, dA = \int_{-1}^1 \int_{-1}^1 f(F_K(\xi,\eta)) |\det(J(\xi,\et
 
 Unlike triangles, we need **numerical quadrature** because $\det(J)$ is not constant.
 
-### Interactive Visualization: Quadrilateral Mapping
+### Worked Example: Quadrilateral Mapping
 
-[codeContainer](./textbook_notes/chapter_4/ex_21_quad_mapping.js)
+[Worked example and static figure](examples.md#quadrilateral-mapping)
 
 ## Exercise 4.x.1: Taylor's Theorem Application
 

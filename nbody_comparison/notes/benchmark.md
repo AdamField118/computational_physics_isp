@@ -1,9 +1,10 @@
----
-title: "N-Body Gravitational Simulation"
-date: "2026-01-20"
-tags: "Project"
-snippet: "Multi-language performance comparison of N-body gravitational simulations across JAX (GPU), Fortran, Rust, Julia, C++, C, and Python with timing and energy-drift measurements."
----
+# N-Body Gravitational Simulation
+
+Date: 2026-01-20
+Topics: Project
+
+Multi-language performance comparison of N-body gravitational simulations across JAX (GPU), Fortran, Rust, Julia, C++, C, and Python with timing and energy-drift measurements.
+
 ## Project Overview
 
 This project compares seven implementations of the same gravitational N-body problem, including NumPy and JAX versions in Python.
@@ -26,7 +27,7 @@ This project compares seven implementations of the same gravitational N-body pro
 
 ### Results in the Original Write-Up
 
-The tables below are from the original write-up and differ from the checked-in `web/data/benchmark_results.json`. Use that file for comparisons from the saved run.
+The tables below are from the original write-up and differ from the checked-in `../results/benchmark_results.json`. Use that file for comparisons from the saved run.
 
 At **N=1000 particles**, the original table reports:
 - JAX (GPU) is **1384× faster** than Python
@@ -35,9 +36,9 @@ At **N=1000 particles**, the original table reports:
 
 ---
 
-## Interactive Performance Dashboard
+## Saved Results
 
-[codeContainer](./nbody_comparison/web/js/performance_dashboard.js)
+[Measured results](../results/benchmark_results.json), [performance summary](../results/performance_summary.md), and [illustrative sample data](../results/illustrative_sample.json). The sample data are preserved separately and are not measurements.
 
 ---
 
@@ -184,25 +185,25 @@ These timings include each implementation's wrapper and execution strategy. They
 ## Trajectory Visualizations
 
 ### Energy Conservation Plot
-![Energy conservation over time](./nbody_comparison/web/data/energy_conservation.png)
+![Energy conservation over time](../results/energy_conservation.png)
 
 *Kinetic, potential, and total energy over the integration.*
 
 ### Scaling Analysis
-![Scaling analysis across implementations](./nbody_comparison/web/data/comprehensive_scaling.png)
+![Scaling analysis across implementations](../results/comprehensive_scaling.png)
 
 *Four-panel analysis: time per step, speedup, energy conservation, and performance at N=1000*
 
 ### GPU Crossover Analysis
-![GPU vs CPU crossover](./nbody_comparison/web/data/crossover_analysis.png)
+![GPU vs CPU crossover](../results/crossover_analysis.png)
 
 *GPU and CPU timings across the sampled particle counts.*
 
 ---
 
-## Interactive 3D Simulation
+## Small-System Demonstration
 
-[codeContainer](./nbody_comparison/web/js/threejs_simulation.js)
+[Initial conditions and update algorithm](simulation_example.md) document the separate illustrative simulation.
 
 ---
 
@@ -342,10 +343,7 @@ Complete test suite in `tests/test_accuracy.py`:
 - **Python 3.12**: NumPy, Matplotlib, SciPy
 
 ### Visualization
-- **Three.js**: 3D particle simulation
-- **Chart.js**: Performance plots
 - **Matplotlib**: Static visualizations
-- **HTML/CSS/JS**: Web dashboard
 
 ### Compute Environment
 - **WPI Turing Cluster**
@@ -360,7 +358,7 @@ Complete test suite in `tests/test_accuracy.py`:
 ### Near-Term Enhancements
 - [ ] OpenMP parallelization for C/C++
 - [ ] Adaptive timestep control (RK45)
-- [ ] Interactive web visualization with WebGPU
+- [ ] Offline trajectory animations
 - [ ] Real-time parameter adjustment
 
 ### Long-Term Goals
@@ -392,31 +390,7 @@ Complete test suite in `tests/test_accuracy.py`:
 
 ## Repository Structure
 
-```
-computational_physics_isp/nbody_comparison/
-├── nbody/
-│   ├── jax/          # JAX GPU implementation
-│   ├── fortran/      # Fortran + OpenMP
-│   ├── rust/         # Rust implementation
-│   ├── julia/        # Julia implementation
-│   ├── cpp/          # C++ + pybind11
-│   ├── c/            # C + ctypes
-│   ├── python/       # Pure Python baseline
-│   └── benchmark/    # Performance testing suite
-├── web/
-│   ├── index.md      # This file
-│   ├── data/         # Benchmark results, plots
-│   ├── js/           # Interactive visualizations
-│   └── css/          # Styling
-├── tests/
-│   └── test_accuracy.py  # Validation suite
-├── docs/
-│   ├── theory.md     # Physics & numerical methods
-│   └── results.md    # Detailed performance analysis
-└── README.md
-```
-
----
+The [project README](../README.md) lists the implementations, scripts, notes, and result files.
 
 ## Contact & Acknowledgments
 
@@ -436,8 +410,8 @@ computational_physics_isp/nbody_comparison/
 
 All code, benchmarks, and raw data available at:
 - **Repository:** `computational_physics_isp/nbody_comparison/`
-- **Benchmark Results:** `web/data/benchmark_results.json`
-- **Visualizations:** `web/data/*.png`, `web/data/*.gif`
+- **Benchmark Results:** `../results/benchmark_results.json`
+- **Visualizations:** `../results/*.png`, `results/*.gif`
 
 **License:** MIT (code), CC BY 4.0 (documentation)
 

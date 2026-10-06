@@ -54,26 +54,14 @@ Velocity Verlet is a symplectic integrator that conserves energy better than sim
 
 ## Project Structure
 
-```
-nbody_comparison/
-├── nbody/
-│   ├── jax/
-│   │   └── nbody_jax.py              # JAX implementation (GPU)
-│   ├── fortran/
-│   │   ├── nbody.f90                 # Fortran implementation
-│   │   └── setup.py                  # f2py build script
-│   ├── cpp/                          # C++ (coming soon)
-│   ├── c/                            # C (coming soon)
-│   └── benchmark/
-│       ├── benchmark.py              # Performance testing suite
-│       └── visualize.py              # Matplotlib animations
-├── web/
-│   ├── index.html                    # Interactive frontend
-│   ├── js/nbody_viz.js              # Three.js visualization
-│   └── data/benchmark_results.json   # Benchmark data
-└── tests/
-    └── test_accuracy.py              # Verify implementations match
-```
+| Path | Contents |
+|---|---|
+| `nbody/` | Implementations and benchmark scripts |
+| `tests/` | Cross-implementation accuracy checks |
+| `results/` | Saved numerical data, plots, and summaries |
+| `notes/benchmark.md` | Physics and benchmark discussion |
+| `notes/project_plan.md` | Original implementation plan |
+| `notes/simulation_example.md` | Small-system demonstration algorithm |
 
 ## Installation & Setup
 
@@ -129,8 +117,8 @@ This will:
 - Test multiple particle counts (10, 50, 100, 500, 1000)
 - Test multiple timestep counts (100, 500, 1000, 5000)
 - Compare JAX vs Fortran performance
-- Generate plots in `web/data/`
-- Save JSON results for web frontend
+- Generate plots in `results/`
+- Save JSON results for analysis
 
 ### Creating Visualizations
 
@@ -189,7 +177,7 @@ plt.show()
 
 ## Saved Results
 
-Timings and energy drift are recorded in `web/data/benchmark_results.json`. Compare implementations at the same particle count and number of steps; the GPU crossover depends on both the hardware and the CPU implementation.
+Timings and energy drift are recorded in `results/benchmark_results.json`. Compare implementations at the same particle count and number of steps; the GPU crossover depends on both the hardware and the CPU implementation.
 
 ## Testing & Validation
 
@@ -242,7 +230,7 @@ gprof ./nbody_fortran
 **Adam Field**  
 Physics, Worcester Polytechnic Institute  
 Email: adfield@wpi.edu  
-Website: adamfield.org
+
 
 ---
 

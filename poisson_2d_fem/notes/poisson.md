@@ -1,9 +1,9 @@
----
-title: "2D Poisson Equation: Hybrid Fortran-Python FEM Solver"
-date: "2026-02-04"
-tags: "Project"
-snippet: "Finite element solver for the 2D Poisson equation with Dirichlet boundary conditions - achieving O(h²) convergence in L² norm."
----
+# 2D Poisson Equation: Hybrid Fortran-Python FEM Solver
+
+Date: 2026-02-04
+Topics: Project
+
+Finite element solver for the 2D Poisson equation with Dirichlet boundary conditions - achieving O(h²) convergence in L² norm.
 
 ## The Problem
 
@@ -49,9 +49,11 @@ $$\|u - u_h\|_{H^1(\Omega)} \leq Ch \|u\|_{H^2(\Omega)}$$
 
 **Goal**: Verify these theoretical convergence rates numerically.
 
-## Interactive Convergence Results
+## Saved Convergence Results
 
-[codeContainer](/poisson_2d_fem/web/scripts/poisson_convergence_viz.js)
+[Full numerical snapshot and interpretation](convergence_snapshot.md).
+
+![Saved convergence plot](../results/convergence.png)
 
 ## Verification Strategy
 
@@ -82,7 +84,7 @@ $$f(x,y) = -\Delta u_{\text{exact}} = 2\pi^2 \sin(\pi x) \sin(\pi y)$$
 - Numerical quadrature  
 - Linear system solve (LAPACK DPOSV)
 
-**Python Frontend** (Convenience):
+**Python Driver**:
 - Mesh generation (Triangle library)
 - Manufactured solution evaluation
 - Error computation and analysis

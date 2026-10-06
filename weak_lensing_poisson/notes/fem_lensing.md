@@ -1,13 +1,13 @@
----
-title: "Finite Element Methods for Weak Gravitational Lensing: From Poisson's Equation to Mass Reconstruction"
-date: "2025-12-05"
-tags: "Computational Astrophysics, FEM, Gravitational Lensing"
-snippet: "A complete derivation of the finite element method for solving the 2D lensing Poisson equation, from weak formulation through numerical implementation. Building the bridge between differential geometry and computational reconstruction."
----
+# Finite Element Methods for Weak Gravitational Lensing: From Poisson's Equation to Mass Reconstruction
+
+Date: 2025-12-05
+Topics: Computational Astrophysics, FEM, Gravitational Lensing
+
+A complete derivation of the finite element method for solving the 2D lensing Poisson equation, from weak formulation through numerical implementation. Building the bridge between differential geometry and computational reconstruction.
 
 ## Abstract
 
-Weak gravitational lensing requires solving a 2D Poisson equation $\nabla^2\psi=2\kappa$ to compute the lensing potential from observed convergence maps. We derive the finite element method (FEM) for this problem from first principles: starting with the strong form PDE, deriving the weak (variational) formulation, discretizing with piecewise linear basis functions, assembling the global stiffness matrix, and solving for nodal potentials. The interactive examples show mesh generation, element assembly, and a Poisson solve.
+Weak gravitational lensing requires solving a 2D Poisson equation $\nabla^2\psi=2\kappa$ to compute the lensing potential from observed convergence maps. We derive the finite element method (FEM) for this problem from first principles: starting with the strong form PDE, deriving the weak (variational) formulation, discretizing with piecewise linear basis functions, assembling the global stiffness matrix, and solving for nodal potentials. The worked examples cover mesh generation, element assembly, and a Poisson solve.
 
 ## 1. The Lensing Poisson Equation
 
@@ -176,11 +176,11 @@ On element $T_e$, we have:
 
 $$\psi|_{T_e} = \psi_1^e N_1 + \psi_2^e N_2 + \psi_3^e N_3 \qquad\boldsymbol{(13)}$$
 
-### 3.4 Interactive Demo: Mesh and Basis Functions
+### 3.4 Mesh and Basis Example
 
-The example below shows the mesh and the support of a selected basis function:
+The linked example describes the mesh and the support of a selected basis function:
 
-[codeContainer](/weak_lensing_poisson/web/js/fem-mesh-demo.js)
+[Worked example](examples.md#mesh-and-basis)
 
 ## 4. Element-Level Computation
 
@@ -293,11 +293,11 @@ For a typical 2D mesh:
 
 **Storage**: Use **Compressed Sparse Row (CSR)** format or **COO** (Coordinate format) for GPU.
 
-### 5.3 Interactive Demo: Element Assembly
+### 5.3 Assembly Example
 
-The example below adds element matrices to the global system:
+The linked example adds element matrices to the global system:
 
-[codeContainer](/weak_lensing_poisson/web/js/fem-assembly-demo.js)
+[Worked example](examples.md#element-assembly)
 
 ## 6. Boundary Conditions
 
@@ -563,11 +563,11 @@ def solve_lensing(kappa, nodes, elements, boundary_nodes):
     return psi, alpha, gamma
 ```
 
-### 9.3 Interactive Demo: Complete Solver
+### 9.3 P1 Solver Example
 
-The solver below uses a simple lens configuration:
+The linked solver example uses a simple lens configuration:
 
-[codeContainer](/weak_lensing_poisson/web/js/fem-solver-demo.js)
+[Worked example](examples.md#p1-solver)
 
 ## 10. Validation: Analytic Solutions
 

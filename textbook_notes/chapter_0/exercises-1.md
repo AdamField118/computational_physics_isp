@@ -1,11 +1,9 @@
----
-title: "Chapter 0 Exercise Solutions"
-date: "2026-01-21"
-tags: "Exercises"
-snippet: "Complete solutions to exercises 0.x.1 through 0.x.16 from Brenner & Scott"
----
-
 # Chapter 0 Exercise Solutions
+
+Date: 2026-01-21
+Topics: Exercises
+
+Complete solutions to exercises 0.x.1 through 0.x.16 from Brenner & Scott
 
 ## Exercise 0.x.1
 

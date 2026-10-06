@@ -1,11 +1,11 @@
----
-title: "Basic Concepts: Chapter 0"
-date: "2026-01-21"
-tags: "Notes"
-snippet: "A one-dimensional introduction to the finite element method."
----
-
 # Introduction
+
+Basic Concepts: Chapter 0
+
+Date: 2026-01-21
+Topics: Notes
+
+A one-dimensional introduction to the finite element method.
 
 Chapter 0 provides a one-dimensional introduction to the finite element method, serving as a microcosm of the entire book. The chapter develops the fundamental concepts through the lens of two-point boundary value problems, leaving some theoretical loose ends that motivate the study of Sobolev spaces in Chapter 1.
 

@@ -393,7 +393,7 @@ def run_benchmark_suite() -> List[BenchmarkResult]:
     return results
 
 
-def plot_results(results: List[BenchmarkResult], output_dir: str = '../../web/data'):
+def plot_results(results: List[BenchmarkResult], output_dir: str = Path(__file__).resolve().parents[2] / 'results'):
     """Generate comparison plots"""
     print("\nGenerating plots...")
     
@@ -436,7 +436,7 @@ def plot_results(results: List[BenchmarkResult], output_dir: str = '../../web/da
     plt.close()
 
 
-def save_results_json(results: List[BenchmarkResult], output_dir: str = '../../web/data'):
+def save_results_json(results: List[BenchmarkResult], output_dir: str = Path(__file__).resolve().parents[2] / 'results'):
     """Save results as JSON"""
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     

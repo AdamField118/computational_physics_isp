@@ -1,9 +1,10 @@
----
-title: "1D Finite Element Method: Multi-Language Performance Analysis"
-date: "2026-02-02"
-tags: "Project"
-snippet: "Assembly timings for a 1D finite-element problem in Python, C, C++, Fortran, Julia, and Rust."
----
+# 1D Finite Element Method: Multi-Language Performance Analysis
+
+Date: 2026-02-02
+Topics: Project
+
+Assembly timings for a 1D finite-element problem in Python, C, C++, Fortran, Julia, and Rust.
+
 ## Summary
 This project implements and benchmarks the piecewise linear finite element method from Brenner & Scott Chapter 0, Section 0.4 across **six programming languages**: Python, C, C++, Fortran, Julia, and Rust. 
 **Key Results:**
@@ -21,8 +22,11 @@ The reference currently defines:
 $$u_{\text{exact}}(x) = x^2 - x^3$$
 $$f(x) = 2 - 6x$$
 These definitions need to be reconciled before a convergence test: the stated solution has $-u''=-2+6x$ and $u'(1)=-1$. The benchmark checks agreement between assembly implementations, not agreement with this analytic solution.
-## Interactive Performance Dashboard
-[codeContainer](/fem_1d_benchmark/web/scripts/fem_benchmark_viz.js)
+## Timing Tables and Figures
+
+[Saved timings](../results/fem_benchmark_results.json) and [full timing table](../results/benchmark_summary.md).
+
+![Assembly timings and speedup](../results/assembly_comparison.png)
 ## Performance Results
 ### Summary Table (n = 20,000 elements)
 | Language | Assembly Time | Speedup vs Python | Relative to Fastest |
@@ -159,8 +163,8 @@ make build
 # Run benchmarks
 make benchmark
 
-# Generate interactive dashboard
-make dashboard
+# Generate static figures and Markdown tables
+make plots
 
 # Run correctness tests
 make test

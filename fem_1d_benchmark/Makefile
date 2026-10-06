@@ -1,6 +1,6 @@
 # Makefile for FEM 1D Benchmark
 
-.PHONY: all build clean test benchmark dashboard help
+.PHONY: all build clean test benchmark plots help
 
 all: build
 
@@ -9,7 +9,7 @@ help:
 	@echo "  make build      - Build all implementations"
 	@echo "  make test       - Run quick correctness test"
 	@echo "  make benchmark  - Run full benchmark suite"
-	@echo "  make dashboard  - Generate web dashboard"
+	@echo "  make plots      - Generate static figures and Markdown tables"
 	@echo "  make clean      - Clean build artifacts"
 	@echo "  make all        - Build everything (default)"
 
@@ -25,10 +25,10 @@ benchmark: build
 	@echo "Running full benchmark suite..."
 	cd benchmark && python3 benchmark.py
 
-dashboard: benchmark
-	@echo "Generating web dashboard..."
+plots:
+	@echo "Generating static figures and Markdown tables..."
 	cd benchmark && python3 visualize.py
-	@echo "Dashboard ready: web/benchmark_results.html"
+	@echo "Results: results/assembly_comparison.png and results/benchmark_summary.md"
 
 clean:
 	@echo "Cleaning build artifacts..."
@@ -36,8 +36,6 @@ clean:
 	rm -f cpp/*.so
 	rm -f fortran/*.so
 	rm -rf rust/target
-	rm -f results/*.json
-	rm -f web/benchmark_results.html
 	@echo "Clean complete"
 
 # Individual language builds

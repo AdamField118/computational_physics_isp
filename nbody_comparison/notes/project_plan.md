@@ -2,54 +2,11 @@
 
 ## Project Overview
 Implement identical N-body gravitational simulations in JAX (GPU), Fortran, C++, and C.
-Wrap all in Python, benchmark performance, and visualize results with HTML frontend.
+Wrap all in Python, benchmark performance, and save plots and animations for comparison.
 
 ## Directory Structure
-```
-computational_physics_isp/
-├── README.md
-├── nbody/
-│   ├── __init__.py
-│   ├── jax/
-│   │   ├── __init__.py
-│   │   └── nbody_jax.py          # Pure JAX implementation
-│   ├── fortran/
-│   │   ├── nbody.f90              # Fortran implementation
-│   │   ├── Makefile               # Build system
-│   │   └── setup.py               # f2py wrapper config
-│   ├── cpp/
-│   │   ├── nbody.cpp              # C++ implementation
-│   │   ├── nbody.h                # Header
-│   │   ├── Makefile
-│   │   └── setup.py               # pybind11 wrapper
-│   ├── c/
-│   │   ├── nbody.c                # C implementation
-│   │   ├── nbody.h
-│   │   ├── Makefile
-│   │   └── setup.py               # ctypes/cffi wrapper
-│   ├── python/
-│   │   ├── __init__.py
-│   │   └── nbody_python.py        # Pure Python (baseline)
-│   └── benchmark/
-│       ├── benchmark.py           # Performance testing
-│       ├── visualize.py           # Matplotlib animations
-│       └── compare.py             # Generate comparison plots
-├── web/
-│   ├── index.html                 # Main frontend
-│   ├── js/
-│   │   └── nbody_viz.js          # Three.js or WebGL or WebGPU visualization
-│   ├── css/
-│   │   └── styles.css
-│   └── data/
-│       └── benchmark_results.json # Generated from Python
-├── tests/
-│   └── test_accuracy.py           # Verify all implementations match
-├── notebooks/
-│   └── analysis.ipynb             # Jupyter notebook for exploration
-└── docs/
-    ├── theory.md                  # N-body physics & numerical methods
-    └── results.md                 # Performance analysis writeup
-```
+
+See the [project README](../README.md) for the current layout. The plan covers implementations, correctness tests, benchmark data, and visual analysis. It also proposed an exploratory notebook, a separate comparison script, theory notes, and a results write-up; these were planned outputs rather than files present in the original directory sketch.
 
 ## Implementation Plan
 
@@ -77,11 +34,11 @@ computational_physics_isp/
 -  Profile each implementation
 -  Generate comparison plots
 
-### Phase 4: Visualization & Frontend (Week 5)
+### Phase 4: Visualization (Week 5)
 -  Python-based animation (matplotlib/plotly)
--  HTML/Three.js interactive 3D visualization
--  Dashboard showing benchmark results
--  Real-time parameter adjustment (if possible)
+-  Offline 3D trajectory visualization
+-  Figures and tables showing benchmark results
+-  Parameter comparisons across saved runs
 
 ### Phase 5: Documentation & Writeup (Week 6)
 -  Theory documentation

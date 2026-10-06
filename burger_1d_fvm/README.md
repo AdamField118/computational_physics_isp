@@ -749,18 +749,9 @@ def plot_convergence_study(dx_values, errors, expected_order=2):
     return fig, ax
 ```
 
-**Interactive web visualization**:
-```javascript
-// web/burgers_viz.js
-function createBurgersVisualization(container, data) {
-    // Use Chart.js for interactive plots
-    // Allow user to:
-    // - Select flux type
-    // - Adjust viscosity
-    // - Choose initial condition
-    // - Animate solution
-}
-```
+**Parameter comparisons and animation**:
+
+Save solution curves for each flux choice, viscosity, and initial condition. Animate the saved time slices with Matplotlib and compare the shock width and propagation speed across runs.
 
 ---
 
@@ -863,7 +854,7 @@ $$u(x, t) = \frac{1}{2}(u_L + u_R) - \frac{1}{2}(u_R - u_L) \tanh\left(\frac{(u_
 ### Visualizations
 - [ ] 4+ benchmark result plots
 - [ ] Convergence study graphs
-- [ ] Interactive web demo (optional)
+- [ ] Saved parameter-comparison plots (optional)
 - [ ] Animation: shock formation
 
 ### Blog Post

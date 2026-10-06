@@ -1,11 +1,11 @@
----
-title: "Chapter 3 Interactive Exercises: Finite Element Construction"
-date: "2026-01-30"
-tags: "Exercises"
-snippet: "Interactive visualizations of nodal basis functions for rectangles, triangles, and nonconforming elements"
----
-
 # Chapter 3: Construction of Finite Element Spaces
+
+Chapter 3 Exercises: Finite Element Construction
+
+Date: 2026-01-30
+Topics: Exercises
+
+Examples of nodal basis functions for rectangles, triangles, and nonconforming elements
 
 ## Exercise 3.x.9: Rectangular Element Basis Functions
 
@@ -37,9 +37,9 @@ $$\phi_4(x,y) = \frac{(1-x)(1+y)}{4}$$
 - $\phi_i(v_j) = \delta_{ij}$
 - $\sum_{i=1}^4 \phi_i(x,y) = 1$ (partition of unity)
 
-### Interactive Visualization
+### Worked Example
 
-[codeContainer](./textbook_notes/chapter_3/ex_9_rectangle.js)
+[Worked example and static figure](examples.md#rectangle)
 
 ---
 
@@ -76,9 +76,9 @@ $$\phi_6 = 4\lambda_1\lambda_3 = 4y(1-x-y)$$
 - Each $\phi_i \in P_2$
 - $\sum_{i=1}^6 \phi_i = 1$
 
-### Interactive Visualization
+### Worked Example
 
-[codeContainer](./textbook_notes/chapter_3/ex_10_triangle.js)
+[Worked example and static figure](examples.md#quadratic-triangle)
 
 ---
 
@@ -127,9 +127,9 @@ $$V_h^{NC,P_2} = \{v : v|_T \in P_2, \, v \text{ continuous at 2 points per edge
 
 A quadratic function on an edge is determined by 3 values. If we enforce continuity at 2 interior points, the functions match on the entire edge.
 
-### Interactive Visualization
+### Worked Example
 
-[codeContainer](./textbook_notes/chapter_3/ex_14_nonconforming.js)
+[Worked example and static figure](examples.md#nonconforming-elements)
 
 ---
 
@@ -181,9 +181,9 @@ $$N_{tet}(r) = \binom{r+3}{3} = \frac{(r+1)(r+2)(r+3)}{6}$$
 - $r=2$: $N = \binom{5}{3} = 10$ nodes (4 vertices + 6 edge midpoints)
 - $r=3$: $N = \binom{6}{3} = 20$ nodes
 
-### Interactive Visualization
+### Worked Example
 
-[codeContainer](./textbook_notes/chapter_3/ex_19_lagrange.js)
+[Worked example and static figure](examples.md#lagrange-node-counts)
 
 ---
 

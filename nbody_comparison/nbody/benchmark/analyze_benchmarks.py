@@ -15,7 +15,7 @@ import matplotlib.patches as mpatches
 class BenchmarkAnalyzer:
     """Analyze and visualize benchmark results"""
     
-    def __init__(self, data_dir='../../web/data'):
+    def __init__(self, data_dir=Path(__file__).resolve().parents[2] / 'results'):
         self.data_dir = Path(data_dir)
         self.results = None
         self.implementations = None

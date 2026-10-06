@@ -1,11 +1,11 @@
----
-title: "Finite Element Spaces: Transformation Theory"
-date: "2026-01-30"
-tags: "Notes"
-snippet: "Affine transformations, reference elements, Jacobians, and approximation properties for finite element spaces."
----
-
 # Chapter 4: Finite Element Spaces
+
+Finite Element Spaces: Transformation Theory
+
+Date: 2026-01-30
+Topics: Notes
+
+Affine transformations, reference elements, Jacobians, and approximation properties for finite element spaces.
 
 These notes follow the maps between reference and physical elements and their effect on derivatives, integrals, and error estimates.
 

@@ -1,11 +1,11 @@
----
-title: "FEM Foundations: Sobolev Spaces to Error Analysis"
-date: "2026-01-29"
-tags: "Notes"
-snippet: "Mathematical foundations of the finite element method, from weak derivatives and Sobolev spaces through Galerkin approximation and error analysis."
----
-
 # Finite Element Method: Mathematical Foundations
+
+FEM Foundations: Sobolev Spaces to Error Analysis
+
+Date: 2026-01-29
+Topics: Notes
+
+Mathematical foundations of the finite element method, from weak derivatives and Sobolev spaces through Galerkin approximation and error analysis.
 
 Notes on Lebesgue spaces, weak derivatives, and the variational formulation of FEM, following Brenner & Scott's *The Mathematical Theory of Finite Element Methods* (3rd edition).
 

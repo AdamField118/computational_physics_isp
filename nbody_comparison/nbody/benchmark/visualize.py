@@ -258,12 +258,12 @@ def main():
     
     parser = argparse.ArgumentParser(description='Visualize N-body benchmark results')
     parser.add_argument('input', help='Input JSON file with benchmark results')
-    parser.add_argument('--output-dir', default='plots', help='Output directory for plots')
+    parser.add_argument('--output-dir', default=Path(__file__).resolve().parents[2] / 'results', help='Output directory for plots')
     args = parser.parse_args()
     
     # Create output directory
     output_dir = Path(args.output_dir)
-    output_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
     
     # Load data
     print(f"Loading data from {args.input}...")

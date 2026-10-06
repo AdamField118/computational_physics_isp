@@ -1,31 +1,34 @@
-# computational_physics_isp
+# Computational Physics Independent Study
 
-Code and written work from my Computational Physics independent study (PH3999)
-— Finite Volume and Finite Element methods, and related numerical experiments.
+Code, notes, and numerical experiments from my Computational Physics independent study (PH3999) at WPI. The projects cover finite-element and finite-volume methods, weak lensing, and N-body integration.
 
-This repository is **code and work only**. The website that used to live at
-`comphys.adamfield.org` has moved into my main site:
+## Projects and notes
 
-- Write-ups and notes → **Courses** and **Blog** at <https://www.adamfield.org>
-- `comphys.adamfield.org` now redirects there.
+| Project | Code and instructions | Notes |
+|---|---|---|
+| 1D FEM benchmark | [README](fem_1d_benchmark/README.md) | [Benchmark analysis](fem_1d_benchmark/notes/benchmark.md) |
+| N-body comparison | [README](nbody_comparison/README.md) | [Physics and results](nbody_comparison/notes/benchmark.md), [project plan](nbody_comparison/notes/project_plan.md) |
+| 2D Poisson FEM | [README](poisson_2d_fem/README.md) | [Derivation and results](poisson_2d_fem/notes/poisson.md), [theory](poisson_2d_fem/THEORY.md) |
+| Weak-lensing FEM | [README](weak_lensing_poisson/README.md) | [Lensing notes](weak_lensing_poisson/notes/fem_lensing.md), [P1 examples](weak_lensing_poisson/notes/examples.md) |
+| 1D Burgers FVM | [Plan and code sketches](burger_1d_fvm/README.md) | Shock capturing, reconstruction, and time integration |
+| 2D shallow water | [Plan and code sketches](2d_shallow_water/README.md) | Source balancing and wet/dry fronts |
+| Textbook notes | [Reading index](textbook_notes/README.md) | Chapters 0, 3, and 4 of Brenner & Scott |
+| Fortran exercises | [Hello world](learning_fortran/helloworld.f90) | Language practice |
 
-## Contents
-
-| Path | What it is |
-|---|---|
-| `2d_shallow_water/` | Plan and code sketches for a 2D shallow-water solver |
-| `burger_1d_fvm/` | Plan and code sketches for a 1D Burgers finite-volume solver |
-| `fem_1d_benchmark/` | 1D finite-element benchmark |
-| `poisson_2d_fem/` | 2D Poisson, finite element |
-| `weak_lensing_poisson/` | Weak-lensing Poisson problem |
-| `nbody_comparison/` | N-body integrator comparison |
-| `learning_fortran/` | Fortran exercises |
-| `textbook_notes/` | Reading notes (chapters 0, 3, 4) |
-| `nbody.md` | N-body write-up |
-| `environment.yml` | Conda environment for the Python code |
+Markdown files can be read directly. Plots are ordinary image files, numerical tables are stored alongside their projects, and figure-generation scripts run locally with Python.
 
 ## Environment
 
 ```bash
 conda env create -f environment.yml
 ```
+
+See each project's README for compiler and binding requirements. The standalone note figures require NumPy and Matplotlib:
+
+```bash
+python textbook_notes/generate_figures.py
+python weak_lensing_poisson/notes/generate_examples.py
+python fem_1d_benchmark/benchmark/visualize.py
+```
+
+The [content map](docs/CONTENT_MAP.md) records where the notes, data, and examples were preserved during restructuring. The `humanization` branch is the checkpoint before that restructuring; `offline-notes` contains both commits.
