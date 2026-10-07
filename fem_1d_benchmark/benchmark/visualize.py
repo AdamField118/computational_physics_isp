@@ -17,7 +17,9 @@ def generate(input_path, output_dir):
     benches = data['benchmarks']
     baseline = {r['n']: r['mean'] for b in benches if b['name'] == 'Python' for r in b['results']}
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), constrained_layout=True)
-    lines = ['# FEM assembly timings', '', 'Saved run: ' + data['metadata']['date'], '',
+    lines = ['# FEM assembly timings', '',
+             'Plots are generated locally; see the [figure instructions](../../docs/GENERATED_FILES.md).', '',
+             'Saved run: ' + data['metadata']['date'], '',
              'Times are in milliseconds. Speedup is relative to the Python wrapper at the same n.', '',
              '| Implementation | n | Mean | Std. dev. | Minimum | Maximum | Speedup |',
              '|---|---:|---:|---:|---:|---:|---:|']
@@ -38,7 +40,7 @@ def generate(input_path, output_dir):
         ax.legend(fontsize=8)
     fig.savefig(output_dir / 'assembly_comparison.png', dpi=170)
     plt.close(fig)
-    lines += ['', '![Assembly time and speedup](assembly_comparison.png)', '']
+    lines += ['', 'Figure: Assembly time and speedup. Generated locally as `assembly_comparison.png`.', '']
     (output_dir / 'benchmark_summary.md').write_text('\n'.join(lines))
 
 

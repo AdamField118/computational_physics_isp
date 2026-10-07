@@ -1,5 +1,7 @@
 # FEM assembly timings
 
+Plots are generated locally; see the [figure instructions](../../docs/GENERATED_FILES.md).
+
 Saved run: 2026-02-02T20:02:05.476412
 
 Times are in milliseconds. Speedup is relative to the Python wrapper at the same n.
@@ -37,4 +39,4 @@ Times are in milliseconds. Speedup is relative to the Python wrapper at the same
 | Rust | 10000 | 0.207187 | 0.011384 | 0.199043 | 0.229343 | 251.341 |
 | Rust | 20000 | 0.531156 | 0.008393 | 0.519870 | 0.543629 | 294.255 |
 
-![Assembly time and speedup](assembly_comparison.png)
+Figure: Assembly time and speedup. Generated locally as `assembly_comparison.png`.

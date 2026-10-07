@@ -66,4 +66,4 @@ Agreement with the Python reference checks cross-language assembly consistency. 
 
 - [Benchmark discussion](notes/benchmark.md)
 - [Full timing table](results/benchmark_summary.md)
-- [Timing figure](results/assembly_comparison.png)
+- Timing figure: `results/assembly_comparison.png` (generated with `make plots`)

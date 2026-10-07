@@ -1,5 +1,7 @@
 # 1D Finite Element Method: Multi-Language Performance Analysis
 
+Plots are generated locally; see the [figure instructions](../../docs/GENERATED_FILES.md).
+
 Date: 2026-02-02
 Topics: Project
 
@@ -26,7 +28,7 @@ These definitions need to be reconciled before a convergence test: the stated so
 
 [Saved timings](../results/fem_benchmark_results.json) and [full timing table](../results/benchmark_summary.md).
 
-![Assembly timings and speedup](../results/assembly_comparison.png)
+Figure: Assembly timings and speedup. Generated locally as `../results/assembly_comparison.png`.
 ## Performance Results
 ### Summary Table (n = 20,000 elements)
 | Language | Assembly Time | Speedup vs Python | Relative to Fastest |

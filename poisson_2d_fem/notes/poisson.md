@@ -1,5 +1,7 @@
 # 2D Poisson Equation: Hybrid Fortran-Python FEM Solver
 
+Plots are generated locally; see the [figure instructions](../../docs/GENERATED_FILES.md).
+
 Date: 2026-02-04
 Topics: Project
 
@@ -53,7 +55,7 @@ $$\|u - u_h\|_{H^1(\Omega)} \leq Ch \|u\|_{H^2(\Omega)}$$
 
 [Full numerical snapshot and interpretation](convergence_snapshot.md).
 
-![Saved convergence plot](../results/convergence.png)
+Figure: Saved convergence plot. Generated locally as `../results/convergence.png`.
 
 ## Verification Strategy
 

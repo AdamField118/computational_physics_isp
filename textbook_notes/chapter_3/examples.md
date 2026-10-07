@@ -1,5 +1,7 @@
 # Chapter 3 worked examples
 
+Plots are generated locally; see the [figure instructions](../../docs/GENERATED_FILES.md).
+
 These examples preserve the mathematical content of the exercise demonstrations. Regenerate their figures with `python textbook_notes/generate_figures.py` from the repository root.
 
 ## Rectangle
@@ -13,7 +15,7 @@ $$\phi_1=\frac{(1-x)(1-y)}2,\quad
 
 Each function equals one at its own vertex and zero at the other three. Their sum is one; each is linear in either coordinate with the other held fixed. The corresponding surface is bilinear, rather than a plane in general.
 
-![Four rectangular basis functions](figures/rectangle.png)
+Figure: Four rectangular basis functions. Generated locally as `figures/rectangle.png`.
 
 **Normalization note:** The original exercise text and demonstration used $(1\pm x)(1\pm y)/4$ while labelling the rectangle $[-1,1]\times[0,1]$. Those formulas belong to $[-1,1]^2$. The figure uses the formulas above, which match the stated rectangle. The original formulas remain in the exercise solution for comparison with this correction.
 
@@ -27,7 +29,7 @@ $$\lambda_1(2\lambda_1-1),\quad\lambda_2(2\lambda_2-1),\quad
 
 They satisfy the nodal Kronecker-delta property and sum to one. Vertex functions take negative values in parts of the triangle; the full signed range is retained in these plots.
 
-![Six quadratic triangular basis functions](figures/quadratic_triangle.png)
+Figure: Six quadratic triangular basis functions. Generated locally as `figures/quadratic_triangle.png`.
 
 ## Nonconforming elements
 
@@ -41,7 +43,7 @@ It is one at that edge midpoint and zero at the other two midpoints. Values can 
 
 There are nine vertex DOFs and sixteen distinct edge DOFs on this mesh before boundary conditions. There are 24 local edge slots, but shared edges identify pairs of slots; the original display's “24 total” counted local slots rather than independent global DOFs. Its selectable local functions also did not assemble the matching contribution on the adjacent triangle.
 
-![Conforming vertex DOFs and nonconforming edge DOFs](figures/nonconforming.png)
+Figure: Conforming vertex DOFs and nonconforming edge DOFs. Generated locally as `figures/nonconforming.png`.
 
 ## Lagrange node counts
 
@@ -59,6 +61,6 @@ $$N_d(r)=\binom{r+d}{d}.$$
 
 A triangle has three vertex nodes, $3(r-1)$ edge-interior nodes, and $(r-1)(r-2)/2$ interior nodes. A tetrahedron has four vertex nodes, $6(r-1)$ edge-interior nodes, $2(r-1)(r-2)$ face-interior nodes, and $(r-1)(r-2)(r-3)/6$ interior nodes, with counts interpreted as zero when the degree is too small.
 
-![Barycentric lattice nodes for degrees one through five](figures/lagrange_nodes.png)
+Figure: Barycentric lattice nodes for degrees one through five. Generated locally as `figures/lagrange_nodes.png`.
 
 The original tetrahedron display used approximately equilateral vertices $(0,0,0),(1,0,0),(0.5,0.866,0),(0.5,0.289,0.816)$. Geometry changes the positions of the nodes, not these counts.

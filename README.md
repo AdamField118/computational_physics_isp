@@ -15,7 +15,7 @@ Code, notes, and numerical experiments from my Computational Physics independent
 | Textbook notes | [Reading index](textbook_notes/README.md) | Chapters 0, 3, and 4 of Brenner & Scott |
 | Fortran exercises | [Hello world](learning_fortran/helloworld.f90) | Language practice |
 
-Markdown files can be read directly. Plots are ordinary image files, numerical tables are stored alongside their projects, and figure-generation scripts run locally with Python.
+Markdown files can be read directly. Numerical tables are stored alongside their projects. Plot images and compiled outputs are generated locally and excluded from Git; see [generated files](docs/GENERATED_FILES.md).
 
 ## Environment
 
@@ -38,3 +38,13 @@ python fem_1d_benchmark/benchmark/visualize.py
 ```
 
 The [content map](docs/CONTENT_MAP.md) records where the notes, data, and examples were preserved during restructuring. The `humanization` branch is the checkpoint before that restructuring; `offline-notes` contains the restructuring and subsequent development-environment changes.
+
+## Repository size
+
+All branches included in the bundle have had binary blobs and build/cache files removed from their history. Notes, code, and text-format results remain. See the [cleanup record](docs/HISTORY_CLEANUP.md) before replacing an older clone.
+
+Before committing, check the staged files:
+
+```bash
+python scripts/check_repository.py
+```

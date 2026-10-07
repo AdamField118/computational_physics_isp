@@ -17,4 +17,4 @@ Generate the small explanatory figures from the repository root:
 python weak_lensing_poisson/notes/generate_examples.py
 ```
 
-Existing numerical outputs are retained in this directory and in `tests/`, including `cluster_example.png`, `convergence_p1.png`, `p3_convergence.png`, `map_reconstruction.png`, and the P3 basis and mesh diagrams.
+Generated plots are excluded from Git, including `cluster_example.png`, `convergence_p1.png`, `p3_convergence.png`, `map_reconstruction.png`, and the P3 basis and mesh diagrams. The source and validation scripts remain; see [figure generation](../docs/GENERATED_FILES.md).

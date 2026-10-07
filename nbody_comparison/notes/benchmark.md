@@ -1,5 +1,7 @@
 # N-Body Gravitational Simulation
 
+Plots are generated locally; see the [figure instructions](../../docs/GENERATED_FILES.md).
+
 Date: 2026-01-20
 Topics: Project
 
@@ -185,17 +187,17 @@ These timings include each implementation's wrapper and execution strategy. They
 ## Trajectory Visualizations
 
 ### Energy Conservation Plot
-![Energy conservation over time](../results/energy_conservation.png)
+Figure: Energy conservation over time. Generated locally as `../results/energy_conservation.png`.
 
 *Kinetic, potential, and total energy over the integration.*
 
 ### Scaling Analysis
-![Scaling analysis across implementations](../results/comprehensive_scaling.png)
+Figure: Scaling analysis across implementations. Generated locally as `../results/comprehensive_scaling.png`.
 
 *Four-panel analysis: time per step, speedup, energy conservation, and performance at N=1000*
 
 ### GPU Crossover Analysis
-![GPU vs CPU crossover](../results/crossover_analysis.png)
+Figure: GPU vs CPU crossover. Generated locally as `../results/crossover_analysis.png`.
 
 *GPU and CPU timings across the sampled particle counts.*
 

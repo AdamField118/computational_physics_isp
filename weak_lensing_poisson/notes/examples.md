@@ -1,5 +1,7 @@
 # P1 mesh, assembly, and solver examples
 
+Plots are generated locally; see the [figure instructions](../../docs/GENERATED_FILES.md).
+
 These examples retain the definitions and algorithms from the three elementary P1 demonstrations. The research implementation remains in [src](../src); these small examples are not replacements for it.
 
 ## Mesh and basis
@@ -10,7 +12,7 @@ The nodal basis $\phi_i$ equals one at node $i$ and zero at every other node. Wi
 
 Uniform refinement inserts one midpoint per distinct edge. A triangle $(a,b,c)$ becomes $(a,m_{ab},m_{ca})$, $(m_{ab},b,m_{bc})$, $(m_{ca},m_{bc},c)$, and $(m_{ab},m_{bc},m_{ca})$. Deduplicating midpoint nodes across shared edges keeps the mesh conforming.
 
-![P1 mesh and nodal basis](figures/mesh_basis.png)
+Figure: P1 mesh and nodal basis. Generated locally as `figures/mesh_basis.png`.
 
 ## Element assembly
 
@@ -25,7 +27,7 @@ K^e_{ij}=A\nabla N_i\cdot\nabla N_j.$$
 
 Each triangle contributes its nine local entries to the corresponding global indices: $K_{I_iI_j}\mathrel{+}=K^e_{ij}$. Shared nodes receive contributions from several elements. The original display counted an entry as nonzero when its magnitude exceeded $10^{-10}$.
 
-![Element-by-element assembly](figures/assembly.png)
+Figure: Element-by-element assembly. Generated locally as `figures/assembly.png`.
 
 Run `python weak_lensing_poisson/notes/generate_examples.py` from the repository root to reproduce both figures and the [element matrices](figures/assembly_matrices.json).
 

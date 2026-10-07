@@ -1,36 +1,101 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Keep source, notes, text-format numerical results, and reproducibility locks.
+# Do not ignore whole results/ directories: their JSON/CSV/text data is useful.
 
-# Rust
+# Python bytecode, packaging metadata, environments, and caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.dist-info/
+.venv/
+venv/
+env/
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.ipynb_checkpoints/
+.coverage
+.coverage.*
+htmlcov/
+
+# Native builds, Rust outputs, and generated compiler files
 target/
+build/
+dist/
+.mesonpy-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+*.o
+*.obj
+*.mod
+*.smod
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.a
+*.lib
+*.rlib
+*.rmeta
+*.pdb
+*.dSYM/
+helloworld
+
+# Nix outputs and temporary lock files; retain dependency lockfiles
+/result
+/result-*
+/outputs/
 *.lock
 !flake.lock
 !**/Cargo.lock
 
-# Common build dirs
-build/
-dist/
+# Local raster plots, documents, animations, and binary numerical outputs
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+*.tif
+*.tiff
+*.ico
+*.pdf
+*.ps
+*.eps
+*.mp4
+*.webm
+*.mov
+*.avi
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.fits
+*.fit
+*.pkl
+*.pickle
 
-# Object files
-*.so
+# Archives and downloadable repository bundles
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+*.xz
+*.bz2
+*.7z
+*.whl
+*.bundle
 
-# Slurm 
+# Editor, operating-system, and batch-job leftovers
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
 *.out
 *.err
-
-# Fortran compiled binaries
-
-# ./learning_fortran/helloworld
-helloworld
-
-# Local development caches and generated compiler metadata
-.cache/
-.venv/
-*.mod
-*.o
-*.egg-info/
-result
-result-*

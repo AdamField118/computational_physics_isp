@@ -1,6 +1,6 @@
 # Content map
 
-The `humanization` branch at commit `5443666d27890783856899f20bc63c2a2fc0e9ed` preserves the complete tree before this restructuring. The `offline-notes` branch contains the reorganized working tree. Both branches are included in the Git bundle; no history was rewritten.
+The `humanization` branch preserves the text before restructuring; `offline-notes` contains the reorganized working tree and later changes. Both branches are included in the bundle. Their binary files and generated caches were subsequently removed by the [history cleanup](HISTORY_CLEANUP.md), which changed commit IDs.
 
 ## Notes and results
 
@@ -12,9 +12,9 @@ The `humanization` branch at commit `5443666d27890783856899f20bc63c2a2fc0e9ed` p
 | `weak_lensing_poisson/web/index.md` | [Weak-lensing notes](../weak_lensing_poisson/notes/fem_lensing.md) |
 | `nbody.md` | [N-body project plan](../nbody_comparison/notes/project_plan.md) |
 | `nbody_comparison/web/data/` | [N-body results](../nbody_comparison/results) |
-| `fem_1d_benchmark/benchmark/fem_benchmark_results.png` | [Original FEM timing figure](../fem_1d_benchmark/results/fem_benchmark_results.png) |
+| `fem_1d_benchmark/benchmark/fem_benchmark_results.png` | Original image removed; [numerical timings](../fem_1d_benchmark/results/fem_benchmark_results.json) retained |
 
-All original numerical data and image files are retained byte-for-byte. Textbook derivations and exercises remain in their chapter folders. Publication dates, topic labels, and description text are retained as ordinary Markdown rather than metadata for a page renderer.
+Original text-format numerical data is retained byte-for-byte. Binary images were removed in the history cleanup; [available generators](GENERATED_FILES.md) can produce local figures. Textbook derivations and exercises remain in their chapter folders. Publication dates, topic labels, and description text are retained as ordinary Markdown rather than metadata for a page renderer.
 
 ## Demonstration content
 
@@ -46,4 +46,4 @@ The Burgers and shallow-water plans retain their scientific content. Their displ
 
 ## Boundaries of this conversion
 
-Browser controls, camera settings, styling, and page-renderer hooks were removed. Mathematical content and numerical examples were retained in notes or executable Python figure scripts. Known mistakes encountered during conversion are called out in the worked examples; this was not a full mathematical review of all the original solutions. The exact original implementations remain available in the checkpoint history.
+Browser controls, camera settings, styling, and page-renderer hooks were removed. Mathematical content and numerical examples were retained in notes or executable Python figure scripts. Known mistakes encountered during conversion are called out in the worked examples; this was not a full mathematical review of all the original solutions. The original source implementations remain available in the rewritten checkpoint history; binary artifacts do not.
