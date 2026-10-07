@@ -15,8 +15,8 @@ import sys
 from pathlib import Path
 
 # Add parent directories to path
-sys.path.append('../nbody/jax')
-sys.path.append('../nbody/python')
+sys.path.append(str(Path(__file__).resolve().parents[1] / 'nbody' / 'jax'))
+sys.path.append(str(Path(__file__).resolve().parents[1] / 'nbody' / 'python'))
 
 # Import implementations
 try:
@@ -32,7 +32,7 @@ except ImportError:
     HAS_JAX = False
 
 try:
-    sys.path.append('../nbody/fortran')
+    sys.path.append(str(Path(__file__).resolve().parents[1] / 'nbody' / 'fortran'))
     import nbody_fortran_module as fortran_nbody
     HAS_FORTRAN = True
 except ImportError:
@@ -40,7 +40,7 @@ except ImportError:
     HAS_FORTRAN = False
 
 try:
-    sys.path.append('../nbody/c')
+    sys.path.append(str(Path(__file__).resolve().parents[1] / 'nbody' / 'c'))
     import nbody_c_wrapper as c_nbody
     HAS_C = True
 except ImportError:
@@ -48,7 +48,7 @@ except ImportError:
     HAS_C = False
 
 try:
-    sys.path.append('../nbody/cpp')
+    sys.path.append(str(Path(__file__).resolve().parents[1] / 'nbody' / 'cpp'))
     from nbody_cpp_module import NBodySimulator
     HAS_CPP = True
 except ImportError:

@@ -203,7 +203,7 @@ class BenchmarkSuite:
         """Load Rust implementation via PyO3/maturin"""
         try:
             rust_dir = Path(__file__).parent.parent / 'rust'
-            sys.path.insert(0, str(rust_dir / 'target' / 'release'))
+            sys.path.insert(0, str(rust_dir))
             
             import fem_rust
             

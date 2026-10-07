@@ -7,6 +7,8 @@ __pycache__/
 # Rust
 target/
 *.lock
+!flake.lock
+!**/Cargo.lock
 
 # Common build dirs
 build/
@@ -23,3 +25,12 @@ dist/
 
 # ./learning_fortran/helloworld
 helloworld
+
+# Local development caches and generated compiler metadata
+.cache/
+.venv/
+*.mod
+*.o
+*.egg-info/
+result
+result-*

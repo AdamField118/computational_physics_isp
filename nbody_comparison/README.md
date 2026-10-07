@@ -1,5 +1,7 @@
 # N-Body Gravitational Simulation: Multi-Language Performance Comparison
 
+For a complete Linux toolchain, use the repository’s [Nix environment](../docs/NIX.md): `nix develop`, then `comphys-build`.
+
 **Adam Field - Computational Physics Independent Study (ISP)**  
 **Worcester Polytechnic Institute**
 

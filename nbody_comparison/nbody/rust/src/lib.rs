@@ -172,7 +172,7 @@ fn compute_energy(
 }
 
 #[pymodule]
-fn nbody_rust_module(_py: Python, m: &PyModule) -> PyResult<()> {
+fn nbody_rust_module(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(simulate, m)?)?;
     m.add_function(wrap_pyfunction!(compute_energy, m)?)?;
     Ok(())

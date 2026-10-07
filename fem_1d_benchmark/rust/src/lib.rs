@@ -1,4 +1,4 @@
-use numpy::{PyArray1, PyArray2, PyReadonlyArray1, PyReadwriteArray1, PyReadwriteArray2};
+use numpy::{ PyReadonlyArray1, PyReadwriteArray1, PyReadwriteArray2};
 use pyo3::prelude::*;
 
 /// Assemble into pre-allocated arrays (like C does)
@@ -45,7 +45,7 @@ fn assemble_system(
 }
 
 #[pymodule]
-fn fem_rust(_py: Python, m: &PyModule) -> PyResult<()> {
+fn fem_rust(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(assemble_system, m)?)?;
     Ok(())
 }

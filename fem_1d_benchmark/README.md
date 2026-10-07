@@ -1,5 +1,7 @@
 # 1D FEM Multi-Language Benchmark
 
+For a complete Linux toolchain, use the repository’s [Nix environment](../docs/NIX.md): `nix develop`, then `comphys-build`.
+
 Assembly of a one-dimensional finite-element stiffness matrix and load vector in Python, C, C++, Fortran, Julia, and Rust, following Brenner & Scott, Chapter 0.
 
 ## Run

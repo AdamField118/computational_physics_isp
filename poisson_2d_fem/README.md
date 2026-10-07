@@ -1,5 +1,7 @@
 # 2D Poisson Equation FEM Solver
 
+For a complete Linux toolchain, use the repository’s [Nix environment](../docs/NIX.md): `nix develop`, then `comphys-build`.
+
 A P1 triangular-element solver with Fortran assembly and a Python driver.
 
 ---

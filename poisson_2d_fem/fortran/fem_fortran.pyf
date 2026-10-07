@@ -1,0 +1,16 @@
+! Expose only the array-based API; the internal mesh type stays in Fortran.
+python module fem_fortran
+    interface
+        module python_interface
+            subroutine solve_poisson_2d(nodes,elements,boundary,n_nodes,n_elements,n_boundary,u_solution)
+                integer, optional, intent(in), check(shape(nodes,0)==n_nodes), depend(nodes) :: n_nodes=shape(nodes,0)
+                integer, optional, intent(in), check(shape(elements,0)==n_elements), depend(elements) :: n_elements=shape(elements,0)
+                integer, optional, intent(in), check(shape(boundary,0)==n_boundary), depend(boundary) :: n_boundary=shape(boundary,0)
+                double precision dimension(n_nodes,2), intent(in) :: nodes
+                integer dimension(n_elements,3), intent(in) :: elements
+                integer dimension(n_boundary), intent(in) :: boundary
+                double precision dimension(n_nodes), intent(out), depend(n_nodes) :: u_solution
+            end subroutine solve_poisson_2d
+        end module python_interface
+    end interface
+end python module fem_fortran

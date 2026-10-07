@@ -8,9 +8,9 @@ name = "nbody_rust_module"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.20", features = ["extension-module"] }
-numpy = "0.20"
-rayon = "1.10"  # ADD THIS LINE
+pyo3 = { version = "0.23", features = ["extension-module"] }
+numpy = "0.23"
+rayon = "1.10"
 
 [profile.release]
 opt-level = 3

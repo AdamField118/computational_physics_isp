@@ -1,5 +1,7 @@
 # Weak-lensing Poisson experiments
 
+For a complete Linux toolchain, use the repository’s [Nix environment](../docs/NIX.md): `nix develop`, then `comphys-build`.
+
 Finite-element experiments for the potential solve and shear-to-mass reconstruction.
 
 - [FEM derivation and lensing notes](notes/fem_lensing.md)

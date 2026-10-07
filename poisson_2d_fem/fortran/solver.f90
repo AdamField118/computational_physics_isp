@@ -31,7 +31,7 @@ contains
         
         if (info /= 0) then
             print *, 'ERROR: DPOSV failed with info = ', info
-            stop
+            error stop 1
         end if
         
         U = F_copy

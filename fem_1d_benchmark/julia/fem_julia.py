@@ -36,7 +36,7 @@ def _init_julia():
         _Main = Main
         _julia_initialized = True
         
-        print(f"✓ Julia initialized with {Main.nthreads()} threads")
+        print(f"✓ Julia initialized with {Main.Threads.nthreads()} threads")
         
         return _Main
         
@@ -172,7 +172,10 @@ if __name__ == "__main__":
     print(f"  K[0,0] = {K[0,0]:.6f}")
     print(f"  F[0] = {F[0]:.6f}")
     
-    # Serial version
+    # Older Julia sources also supplied a separate serial entry point.
+    if not hasattr(_init_julia(), 'assemble_system_serial'):
+        print("Current Julia source provides assemble_system only; assembly completed.")
+        sys.exit(0)
     K_s, F_s = assemble_system_serial(n, f_vals)
     print(f"\nSerial version:")
     print(f"  K shape: {K_s.shape}")

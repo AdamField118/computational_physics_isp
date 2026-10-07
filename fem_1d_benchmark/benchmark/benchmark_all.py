@@ -18,7 +18,7 @@ import platform
 import subprocess
 
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / 'python'))
 
 # Import reference implementation
 try:
@@ -28,6 +28,19 @@ except ImportError as e:
     print(f"Error: fem_reference.py not found! {e}")
     print("Make sure fem_reference.py is in the parent directory")
     sys.exit(1)
+
+
+def allocated_assembly(function, order='C', fortran=False):
+    """Adapt the current in-place extension API to this older timing harness."""
+    def assemble(n, f_vals):
+        K = np.zeros((n, n), dtype=np.float64, order=order)
+        F = np.zeros(n, dtype=np.float64)
+        if fortran:
+            function(n=n, f_vals=f_vals, k=K, f=F)
+        else:
+            function(n, f_vals, K, F)
+        return K, F
+    return assemble
 
 
 class BenchmarkRunner:
@@ -268,7 +281,7 @@ class BenchmarkRunner:
         try:
             import fem_fortran
             # f2py requires keyword arguments for proper dimension checking
-            return lambda n, f_vals: fem_fortran.assemble_system(n=n, f_vals=f_vals)
+            return allocated_assembly(fem_fortran.assemble_system, order='F', fortran=True)
         except ImportError as e:
             print(f"Warning:  Failed to import Fortran module: {e}")
             return None
@@ -278,7 +291,7 @@ class BenchmarkRunner:
         try:
             import fem_fortran
             # f2py requires keyword arguments for proper dimension checking
-            return lambda n, f_vals: fem_fortran.assemble_system_serial(n=n, f_vals=f_vals)
+            return allocated_assembly(fem_fortran.assemble_system_serial, order='F', fortran=True)
         except:
             return None
     
@@ -289,7 +302,7 @@ class BenchmarkRunner:
             sys.path.insert(0, str(cpp_dir))
             
             import fem_cpp
-            return fem_cpp.assemble_system
+            return allocated_assembly(fem_cpp.assemble_system)
         except ImportError as e:
             print(f"Warning:  C++ module not found: {e}")
             return None
@@ -298,7 +311,7 @@ class BenchmarkRunner:
         """Load C++ serial implementation"""
         try:
             import fem_cpp
-            return fem_cpp.assemble_system_serial
+            return allocated_assembly(fem_cpp.assemble_system_serial)
         except:
             return None
     
@@ -324,6 +337,9 @@ class BenchmarkRunner:
         try:
             import fem_julia
             
+            if not hasattr(fem_julia._init_julia(), 'assemble_system_serial'):
+                return None
+
             def julia_serial_wrapper(n, f_vals):
                 K, F = fem_julia.assemble_system_serial(n, f_vals)
                 return np.array(K), np.array(F)
@@ -340,11 +356,7 @@ class BenchmarkRunner:
             
             import fem_rust
             
-            def rust_wrapper(n, f_vals):
-                K, F = fem_rust.assemble_system(n, f_vals)
-                return np.array(K), np.array(F)
-            
-            return rust_wrapper
+            return allocated_assembly(fem_rust.assemble_system)
         except ImportError as e:
             print(f"Warning:  Rust module not found: {e}")
             return None
@@ -354,11 +366,7 @@ class BenchmarkRunner:
         try:
             import fem_rust
             
-            def rust_serial_wrapper(n, f_vals):
-                K, F = fem_rust.assemble_system_serial(n, f_vals)
-                return np.array(K), np.array(F)
-            
-            return rust_serial_wrapper
+            return allocated_assembly(fem_rust.assemble_system_serial)
         except:
             return None
     

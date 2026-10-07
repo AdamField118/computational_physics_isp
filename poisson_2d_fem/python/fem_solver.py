@@ -3,7 +3,8 @@ Main FEM driver - orchestrates mesh → assembly → solve → postprocess
 """
 import numpy as np
 import sys
-sys.path.append('../fortran')
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parents[1] / 'fortran'))
 
 # Import compiled Fortran module
 try:

@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import sys
 
-sys.path.append('../jax')
+sys.path.append(str(Path(__file__).resolve().parents[1] / 'jax'))
 from nbody_jax import (
     create_random_system, NBodyState, NBodyConfig, 
     simulate as jax_simulate, compute_energy
@@ -30,6 +30,8 @@ except ImportError:
     print("Warning: JAX not available")
     HAS_JAX = False
 
+sys.path.append(str(Path(__file__).resolve().parents[1] / 'fortran'))
+
 try:
     import nbody_fortran_module as fortran_nbody
     HAS_FORTRAN = True
@@ -38,7 +40,7 @@ except ImportError:
     HAS_FORTRAN = False
 
 try:
-    sys.path.append('../python')
+    sys.path.append(str(Path(__file__).resolve().parents[1] / 'python'))
     from nbody_python import simulate as python_simulate, compute_energy as python_energy
     HAS_PYTHON = True
 except ImportError:
@@ -46,7 +48,7 @@ except ImportError:
     HAS_PYTHON = False
 
 try:
-    sys.path.append('../c')
+    sys.path.append(str(Path(__file__).resolve().parents[1] / 'c'))
     import nbody_c_wrapper as c_nbody
     HAS_C = True
 except Exception as e:
@@ -54,7 +56,7 @@ except Exception as e:
     HAS_C = False
 
 try:
-    sys.path.append('../cpp')
+    sys.path.append(str(Path(__file__).resolve().parents[1] / 'cpp'))
     from nbody_cpp_module import NBodySimulator
     HAS_CPP = True
 except Exception as e:
@@ -63,7 +65,7 @@ except Exception as e:
 
 # Julia import (add after HAS_CPP block)
 try:
-    sys.path.append('../julia')
+    sys.path.append(str(Path(__file__).resolve().parents[1] / 'julia'))
     import nbody_pyjulia_wrapper as julia_nbody
     HAS_JULIA = julia_nbody.check_pyjulia_available()
     if HAS_JULIA:
@@ -74,7 +76,7 @@ except Exception as e:
 
 # Rust import (add after Julia block)
 try:
-    sys.path.append('../rust')
+    sys.path.append(str(Path(__file__).resolve().parents[1] / 'rust'))
     import nbody_rust_wrapper as rust_nbody
     if not rust_nbody.HAS_RUST:
         raise ImportError("Rust module not compiled")

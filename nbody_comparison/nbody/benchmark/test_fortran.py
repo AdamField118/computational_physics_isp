@@ -1,6 +1,9 @@
 """Quick test of Fortran module"""
 import numpy as np
 import time
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'fortran'))
 import nbody_fortran_module as fortran_nbody
 
 print("Testing Fortran N-body module")

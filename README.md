@@ -19,11 +19,17 @@ Markdown files can be read directly. Plots are ordinary image files, numerical t
 
 ## Environment
 
+The Nix environment includes Python packages and the C, C++, Fortran, Rust, and Julia toolchains:
+
 ```bash
-conda env create -f environment.yml
+nix develop
+comphys-build
+comphys-check --built
 ```
 
-See each project's README for compiler and binding requirements. The standalone note figures require NumPy and Matplotlib:
+See [Nix setup and troubleshooting](docs/NIX.md) for GPU support, individual builds, and platform requirements. The original `environment.yml` remains as a record of the Conda environment; it can be recreated with `conda env create -f environment.yml`, but does not include every compiler or binding dependency.
+
+See each project's README for its numerical examples. The standalone note figures require NumPy and Matplotlib:
 
 ```bash
 python textbook_notes/generate_figures.py
@@ -31,4 +37,4 @@ python weak_lensing_poisson/notes/generate_examples.py
 python fem_1d_benchmark/benchmark/visualize.py
 ```
 
-The [content map](docs/CONTENT_MAP.md) records where the notes, data, and examples were preserved during restructuring. The `humanization` branch is the checkpoint before that restructuring; `offline-notes` contains both commits.
+The [content map](docs/CONTENT_MAP.md) records where the notes, data, and examples were preserved during restructuring. The `humanization` branch is the checkpoint before that restructuring; `offline-notes` contains the restructuring and subsequent development-environment changes.
