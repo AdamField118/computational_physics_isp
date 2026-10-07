@@ -1,7 +1,6 @@
 # Chapter 0 Exercise Solutions
 
 Date: 2026-01-21
-Topics: Exercises
 
 Complete solutions to exercises 0.x.1 through 0.x.16 from Brenner & Scott
 
@@ -334,9 +333,7 @@ Hints:
 By the scaling argument in Theorem 0.4.5, it suffices to prove:
 $$\int_0^1 w^2 dx \leq c \int_0^1 (w'')^2 dx$$
 
-for functions $w$ on $[0,1]$ with $w(0) = w(1) = 0$ and $w$ linear on $[0,1]$ (so $w = 0$ on the reference element, but we work with the error $e$ which has these properties after transformation).
-
-Actually, let me reconsider. The interpolation error $e = u - u_I$ on each element $[x_{j-1}, x_j]$ satisfies $e(x_{j-1}) = e(x_j) = 0$.
+for functions $w$ with square-integrable second derivative and $w(0)=w(1)=0$. The interpolation error $e=u-u_I$ has these endpoint values on each element; the error itself need not be linear.
 
 **Step 2: Poincaré inequality on $[0,1]$**
 
@@ -611,53 +608,15 @@ $$= \left(\frac{1}{h_j} + \frac{1}{h_{j+1}}\right) U_j - \frac{U_{j-1}}{h_j} - \
 
 $$a(\tilde{u}_S, \phi_j) = \frac{U_j - U_{j-1}}{h_j} - \frac{U_{j+1} - U_j}{h_{j+1}}$$
 
-**Step 3**: Difference equation
+**Step 3**: Compare with the difference equation
 
-From (0.5.3), the difference equation for $i = j$ is:
-$$-2\left(\frac{U_{j+1} - U_j}{h_j + h_{j+1}} \cdot \frac{1}{h_{j+1}} - \frac{U_j - U_{j-1}}{h_j + h_{j+1}} \cdot \frac{1}{h_j}\right) = f(x_j)$$
+For an interior node $x_j$, write (0.5.3) as
+$$-\frac{2}{h_j+h_{j+1}}\left(\frac{U_{j+1}-U_j}{h_{j+1}}-\frac{U_j-U_{j-1}}{h_j}\right)=f(x_j).$$
 
-Simplifying:
-$$-\frac{2}{h_j + h_{j+1}}\left(\frac{U_{j+1} - U_j}{h_{j+1}} - \frac{U_j - U_{j-1}}{h_j}\right) = f(x_j)$$
+Multiplying by $(h_j+h_{j+1})/2$ gives
+$$\frac{U_j-U_{j-1}}{h_j}-\frac{U_{j+1}-U_j}{h_{j+1}}=\frac{h_j+h_{j+1}}2 f(x_j).$$
 
-$$\frac{U_j - U_{j-1}}{h_j} - \frac{U_{j+1} - U_j}{h_{j+1}} = -\frac{h_j + h_{j+1}}{2} f(x_j)$$
-
-**Step 4**: Compare with $Q(f\phi_j)$
-
-$$Q(f\phi_j) = \sum_{i=0}^n \frac{h_i + h_{i+1}}{2} f(x_i) \phi_j(x_i)$$
-
-Since $\phi_j(x_i) = \delta_{ij}$:
-$$Q(f\phi_j) = \frac{h_j + h_{j+1}}{2} f(x_j)$$
-
-**Step 5**: Conclusion
-
-From Steps 2 and 3:
-$$a(\tilde{u}_S, \phi_j) = -\frac{h_j + h_{j+1}}{2} f(x_j) = -Q(f\phi_j)$$
-
-Wait, there's a sign error. Let me reconsider the difference equation.
-
-Actually, looking at (0.5.3) more carefully, it should be:
-$$\frac{U_j - U_{j-1}}{h_j} - \frac{U_{j+1} - U_j}{h_{j+1}} = \frac{h_j + h_{j+1}}{2} f(x_j)$$
-
-But this doesn't match the signs. Let me recalculate from the stiffness matrix directly.
-
-Actually, the standard difference equation from the stiffness matrix is:
-$$-\left(\frac{U_j - U_{j-1}}{h_j} - \frac{U_{j+1} - U_j}{h_{j+1}}\right) = f(x_j)$$
-
-which comes from $-u''(x_j) \approx f(x_j)$.
-
-But the quadrature formula gives:
-$$(f, \phi_j) = \int_0^1 f \phi_j dx \approx Q(f\phi_j) = \frac{h_j + h_{j+1}}{2} f(x_j)$$
-
-So we should have:
-$$a(\tilde{u}_S, \phi_j) = Q(f\phi_j)$$
-
-which means:
-$$\frac{U_j - U_{j-1}}{h_j} - \frac{U_{j+1} - U_j}{h_{j+1}} = \frac{h_j + h_{j+1}}{2} f(x_j)$$
-
-Multiplying both sides by $-2/(h_j + h_{j+1})$:
-$$-\frac{2}{h_j + h_{j+1}}\left(\frac{U_j - U_{j-1}}{h_j} - \frac{U_{j+1} - U_j}{h_{j+1}}\right) = f(x_j)$$
-
-This matches (0.5.3). Therefore, $\tilde{u}_S$ satisfies $a(\tilde{u}_S, v) = Q(fv)$ for all $v \in S$.
+The left side is $a(\tilde u_S,\phi_j)$. Since $\phi_j(x_i)=\delta_{ij}$, the right side is $Q(f\phi_j)$. The boundary row uses its one-sided trapezoidal weight. Linearity then gives $a(\tilde u_S,v)=Q(fv)$ for every $v\in S$.
 
 ---
 
@@ -694,38 +653,20 @@ $$Q_i(e) = \frac{h_i}{2}(e(x_{i-1}) + e(x_i)) = 0$$
 
 since $e$ vanishes at the endpoints.
 
-**Step 4**: Estimate $I_i(e)$
+**Step 4**: Bound the element error
 
-From Exercise 0.x.6, for $e$ with $e(x_{i-1}) = e(x_i) = 0$ on element $[x_{i-1}, x_i]$:
-$$\int_{x_{i-1}}^{x_i} e^2 dx \leq \frac{h_i^4}{\pi^2} \int_{x_{i-1}}^{x_i} (e'')^2 dx$$
+Twice integrating by parts gives the trapezoidal error identity
+$$Q_i(w)-I_i(w)=\frac12\int_{x_{i-1}}^{x_i}(x-x_{i-1})(x_i-x)w''(x)\,dx.$$
 
-By Schwarz inequality:
-$$\left|\int_{x_{i-1}}^{x_i} e dx\right|^2 \leq h_i \int_{x_{i-1}}^{x_i} e^2 dx \leq \frac{h_i^5}{\pi^2} \int_{x_{i-1}}^{x_i} (e'')^2 dx$$
-
-Since $e'' = w''$ (as $w_I$ is linear):
-$$\left|I_i(e)\right| \leq \frac{h_i^{5/2}}{\pi} \left(\int_{x_{i-1}}^{x_i} (w'')^2 dx\right)^{1/2}$$
-
-By Schwarz inequality again:
-$$\left(\int_{x_{i-1}}^{x_i} (w'')^2 dx\right)^{1/2} \leq \sqrt{h_i} \cdot \left(\int_{x_{i-1}}^{x_i} |w''| dx\right)$$
-
-Wait, this isn't quite right. Let me use a direct estimate.
-
-Actually, for the trapezoidal rule error on $[x_{i-1}, x_i]$, the standard estimate is:
-$$\left|\int_{x_{i-1}}^{x_i} w dx - \frac{h_i}{2}(w(x_{i-1}) + w(x_i))\right| \leq \frac{h_i^3}{12} \max_{x \in [x_{i-1}, x_i]} |w''(x)|$$
-
-Therefore:
-$$|Q_i(w) - I_i(w)| \leq \frac{h_i^3}{12} \max_{x \in [x_{i-1}, x_i]} |w''(x)| \leq \frac{h_i^2}{12} \int_{x_{i-1}}^{x_i} |w''(x)| dx$$
-
-(using $h_i \max |w''| \leq \int |w''| dx$ by the mean value theorem).
+The kernel is nonnegative and at most $h_i^2/8$, so
+$$|Q_i(w)-I_i(w)|\leq\frac{h_i^2}{8}\int_{x_{i-1}}^{x_i}|w''(x)|\,dx.$$
 
 **Step 5**: Sum over all elements
 
-$$\left|\sum_{i=1}^n (Q_i(w) - I_i(w))\right| \leq \sum_{i=1}^n |Q_i(w) - I_i(w)| \leq \sum_{i=1}^n \frac{h_i^2}{12} \int_{x_{i-1}}^{x_i} |w''(x)| dx$$
+Using $h_i\leq h$,
+$$\left|Q(w)-\int_0^1w(x)\,dx\right|\leq\frac{h^2}{8}\sum_{i=1}^n\int_{x_{i-1}}^{x_i}|w''(x)|\,dx.$$
 
-Since $h_i \leq h$ for all $i$:
-$$\left|Q(w) - \int_0^1 w dx\right| \leq \frac{h^2}{12} \sum_{i=1}^n \int_{x_{i-1}}^{x_i} |w''(x)| dx$$
-
-Therefore, the estimate holds with $C = 1/12$.
+Thus $C=1/8$ suffices for the stated bound.
 
 ---
 
@@ -917,5 +858,3 @@ where:
 8. **Duality Arguments**: Iteratively apply estimates to get higher-order convergence
 9. **Coercivity**: Needed for well-posedness of variational problems
 10. **Natural Boundary Conditions**: Appear in the linear functional, not the space definition
-
-All exercises demonstrate fundamental techniques in finite element analysis: scaling arguments, duality, quadrature error analysis, and the interplay between different norms.

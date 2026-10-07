@@ -1,6 +1,6 @@
 # Saved convergence snapshot
 
-This table preserves every numerical array from the original convergence display, including the L-infinity values omitted from its visible table. It is an archived numerical snapshot, not a new validation run.
+Saved convergence data, including L², H¹, and Linf errors. These values need the qualifications below before they can be used to assess the solver.
 
 [JSON data](../results/convergence_snapshot.json)
 
@@ -12,6 +12,6 @@ This table preserves every numerical array from the original convergence display
 | 0.1118 | 77 | 123 | 0.0003077 | 0.008697 | 0.502 | 1.996682 | 1.000120 |
 | 0.07906 | 147 | 260 | 0.0001539 | 0.006152 | 0.5029 | 1.999461 | 0.999124 |
 
-Rates use log(e_previous/e_current) / log(h_previous/h_current). The display compared L2 with an h² reference and H1 with an h reference, anchored at the first sample.
+Rates use log(e_previous/e_current) / log(h_previous/h_current). For comparison curves, anchor h² and h references at the first L2 and H1 samples.
 
-The H1 computation in the current Python driver contains a placeholder. The Linf values here stay near 0.5 rather than tending to zero. Neither issue is resolved by converting the data to Markdown. Keep this snapshot distinct from future corrected convergence runs.
+The H1 computation in the current Python driver contains a placeholder. The Linf values here stay near 0.5 rather than tending to zero. These data do not establish convergence in either of those norms.

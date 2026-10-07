@@ -1,6 +1,6 @@
-# 2D Shallow Water: Finite Volume Plan
+# 2D Shallow Water: Finite Volume Notes
 
-A planned extension of the Burgers project to a system of conservation laws, with bathymetry and wet/dry fronts. This folder currently contains the plan and code sketches below.
+Notes on extending scalar finite-volume methods to shallow-water flow, including bathymetry and wet/dry fronts. The code blocks are sketches, not a runnable solver.
 
 ## Mathematical Foundation
 
@@ -257,9 +257,9 @@ Typical: $\text{CFL} = 0.5$ for stability.
 
 ---
 
-## Implementation Plan
+## Implementation sketches
 
-### Phase 1: Infrastructure
+### Infrastructure
 
 #### Fortran Modules
 
@@ -495,7 +495,7 @@ def circular_dam_break(grid, h_inner: float, h_outer: float,
     return h0, hu0, hv0
 ```
 
-### Phase 2: Riemann Solvers
+### Riemann Solvers
 
 **`riemann_solvers.f90`**
 ```fortran
@@ -672,7 +672,7 @@ contains
 end module
 ```
 
-### Phase 3: Well-Balanced Scheme
+### Well-Balanced Scheme
 
 **`well_balanced.f90`**
 ```fortran
@@ -784,7 +784,7 @@ contains
 end module
 ```
 
-### Phase 4: Time Stepping
+### Time Stepping
 
 **`time_stepping.f90`**
 ```fortran
@@ -931,7 +931,7 @@ contains
 end module
 ```
 
-### Phase 5: Validation Suite
+### Validation Suite
 
 #### Test 1: Lake at Rest
 ```python
@@ -1046,7 +1046,7 @@ def test_thacker_basin():
     print(f"✓ Thacker basin L² error: {L2_error:.6e}")
 ```
 
-### Phase 6: Visualization
+### Visualization
 
 **`python/visualization.py`**
 ```python
@@ -1153,13 +1153,13 @@ def plot_cross_section(solver, h, y_slice, title='Cross Section'):
     return fig, ax
 ```
 
-### Phase 7: Surface Animation
+### Surface Animation
 
 Store `times`, `h`, `hu`, `hv`, `X`, `Y`, and `bathymetry` for each run. For a selected time index, plot a surface with horizontal coordinates `(X, Y)` and vertical coordinate `h`. Use the same grid connectivity for each frame. To show free-surface elevation instead of depth, plot `h + bathymetry` and label it accordingly. Save the animation locally with Matplotlib.
 
 ---
 
-## Expected Results
+## Expected behavior
 
 ### Well-Balanced Property
 
@@ -1175,55 +1175,6 @@ Store `times`, `h`, `hu`, `hv`, `X`, `Y`, and `bathymetry` for each run. For a s
 | Smooth | $O(\Delta x^2)$ | $O(\Delta x^2)$ |
 | Shock | $O(\Delta x)$ | $O(\Delta x)$ |
 | Contact | $O(\Delta x^{1/2})$ | $O(\Delta x)$ |
-
-## Deliverables
-
-### Code
-- [ ] Fortran solver
-- [ ] Python interface
-- [ ] Test suite (4 benchmarks)
-- [ ] Visualization tools
-
-### Documentation
-- [ ] Mathematical derivation
-- [ ] Implementation guide
-- [ ] User manual
-- [ ] API reference
-
-### Visualizations
-- [ ] 4 benchmark animations
-- [ ] Saved 3D surface animation
-- [ ] Comparison plots (HLL vs HLLC)
-
-### Blog Post
-- [ ] Project overview
-- [ ] Well-balanced schemes explained
-- [ ] Validation results
-- [ ] Connection to 1D Burgers
-
----
-
-## Extensions
-
-### Immediate
-- [ ] Friction terms (Manning's law)
-- [ ] Coriolis force
-- [ ] Rainfall/inflow sources
-- [ ] Non-reflecting boundary conditions
-
-### Advanced
-- [ ] WENO reconstruction (5th order)
-- [ ] Adaptive mesh refinement
-- [ ] Sediment transport
-- [ ] Real bathymetry data
-
-### Production
-- [ ] MPI parallelization
-- [ ] GPU acceleration
-- [ ] NetCDF I/O
-- [ ] NOAA benchmark validation
-
----
 
 ## Resources
 

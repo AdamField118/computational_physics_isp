@@ -2,7 +2,7 @@
 
 Plots are generated locally; see the [figure instructions](../../docs/GENERATED_FILES.md).
 
-These examples preserve the mathematical content of the exercise demonstrations. Regenerate their figures with `python textbook_notes/generate_figures.py` from the repository root.
+Generate the figures with `python textbook_notes/generate_figures.py` from the repository root.
 
 ## Rectangle
 
@@ -17,7 +17,7 @@ Each function equals one at its own vertex and zero at the other three. Their su
 
 Figure: Four rectangular basis functions. Generated locally as `figures/rectangle.png`.
 
-**Normalization note:** The original exercise text and demonstration used $(1\pm x)(1\pm y)/4$ while labelling the rectangle $[-1,1]\times[0,1]$. Those formulas belong to $[-1,1]^2$. The figure uses the formulas above, which match the stated rectangle. The original formulas remain in the exercise solution for comparison with this correction.
+**Normalization note:** The exercise solution uses $(1\pm x)(1\pm y)/4$ while labelling the rectangle $[-1,1]\times[0,1]$. Those formulas belong to $[-1,1]^2$. The figure uses the formulas above, which match the stated rectangle. Use the domain when choosing the normalization.
 
 ## Quadratic triangle
 
@@ -41,7 +41,7 @@ $$\phi_i^{\rm CR}=1-2\lambda_i.$$
 
 It is one at that edge midpoint and zero at the other two midpoints. Values can jump elsewhere along an edge, including at vertices. The function reaches $-1$ at the opposite vertex, which should not be clipped away in a plot.
 
-There are nine vertex DOFs and sixteen distinct edge DOFs on this mesh before boundary conditions. There are 24 local edge slots, but shared edges identify pairs of slots; the original display's “24 total” counted local slots rather than independent global DOFs. Its selectable local functions also did not assemble the matching contribution on the adjacent triangle.
+There are nine vertex DOFs and sixteen distinct edge DOFs on this mesh before boundary conditions. There are 24 local edge slots, but shared edges identify pairs of slots. A global edge basis function includes contributions on both adjacent triangles.
 
 Figure: Conforming vertex DOFs and nonconforming edge DOFs. Generated locally as `figures/nonconforming.png`.
 
@@ -63,4 +63,4 @@ A triangle has three vertex nodes, $3(r-1)$ edge-interior nodes, and $(r-1)(r-2)
 
 Figure: Barycentric lattice nodes for degrees one through five. Generated locally as `figures/lagrange_nodes.png`.
 
-The original tetrahedron display used approximately equilateral vertices $(0,0,0),(1,0,0),(0.5,0.866,0),(0.5,0.289,0.816)$. Geometry changes the positions of the nodes, not these counts.
+An approximately equilateral tetrahedron has vertices $(0,0,0),(1,0,0),(0.5,0.866,0),(0.5,0.289,0.816)$. Geometry changes the positions of the nodes, not these counts.

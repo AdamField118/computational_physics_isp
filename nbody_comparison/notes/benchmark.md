@@ -3,7 +3,6 @@
 Plots are generated locally; see the [figure instructions](../../docs/GENERATED_FILES.md).
 
 Date: 2026-01-20
-Topics: Project
 
 Multi-language performance comparison of N-body gravitational simulations across JAX (GPU), Fortran, Rust, Julia, C++, C, and Python with timing and energy-drift measurements.
 
@@ -40,7 +39,7 @@ At **N=1000 particles**, the original table reports:
 
 ## Saved Results
 
-[Measured results](../results/benchmark_results.json), [performance summary](../results/performance_summary.md), and [illustrative sample data](../results/illustrative_sample.json). The sample data are preserved separately and are not measurements.
+[Measured results](../results/benchmark_results.json), [performance summary](../results/performance_summary.md), and [illustrative sample data](../results/illustrative_sample.json). The sample data are illustrative, not measurements.
 
 ---
 
@@ -95,7 +94,7 @@ $$
 **Why Velocity Verlet?**
 - Second-order accurate: $O(\Delta t^2)$
 - Symplectic: preserves Hamiltonian structure
-- Energy-conserving: no systematic drift
+- Energy error should be checked as the timestep decreases
 - Time-reversible: running backwards recovers initial conditions
 
 ### Softening Parameter
@@ -320,7 +319,7 @@ Use the accuracy tests below to check agreement at the chosen tolerance.
 
 ### Numerical Accuracy Test Suite
 
-Complete test suite in `tests/test_accuracy.py`:
+`tests/test_accuracy.py` checks the available Python, JAX, C, C++, and Fortran implementations:
 
 1. **Energy calculation test**: Verify all compute same initial energy
 2. **Single timestep test**: One integration step produces identical results
@@ -355,31 +354,13 @@ Complete test suite in `tests/test_accuracy.py`:
 
 ---
 
-## Future Work
-
-### Near-Term Enhancements
-- [ ] OpenMP parallelization for C/C++
-- [ ] Adaptive timestep control (RK45)
-- [ ] Offline trajectory animations
-- [ ] Real-time parameter adjustment
-
-### Long-Term Goals
-- [ ] Barnes-Hut tree algorithm (O(N log N))
-- [ ] Fast Multipole Method (O(N))
-- [ ] Multi-GPU scaling with MPI
-- [ ] Relativistic corrections (post-Newtonian)
-- [ ] Collision detection & particle mergers
-- [ ] Integration with astronomical catalogs (Gaia)
-
----
-
 ## References
 
 1. **Press, W. H., et al.** *Numerical Recipes* (Cambridge, 2007) - Chapter 17: Integration of ODEs
 
 2. **Barnes, J. & Hut, P.** "A hierarchical O(N log N) force-calculation algorithm" *Nature* **324**, 446-449 (1986)
 
-3. **Aarseth, S.J.** *Gravitational N-Body Simulations* (Cambridge, 2003) - The definitive textbook
+3. **Aarseth, S.J.** *Gravitational N-Body Simulations* (Cambridge, 2003)
 
 4. **Hairer, E., Lubich, C., Wanner, G.** *Geometric Numerical Integration* (Springer, 2006) - Theory of symplectic integrators
 
@@ -415,6 +396,5 @@ All code, benchmarks, and raw data available at:
 - **Benchmark Results:** `../results/benchmark_results.json`
 - **Visualizations:** `../results/*.png`, `results/*.gif`
 
-**License:** MIT (code), CC BY 4.0 (documentation)
 
 ---

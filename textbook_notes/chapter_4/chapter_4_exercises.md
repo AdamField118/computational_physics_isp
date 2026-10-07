@@ -3,9 +3,8 @@
 Chapter 4 Exercises: Transformation Theory and Implementation
 
 Date: 2026-01-30
-Topics: Exercises
 
-Essential exercises on affine transformations, reference elements, mesh quality, and numerical conditioning for finite element implementation.
+Exercises on affine transformations, reference elements, mesh quality, and numerical conditioning for finite element implementation.
 
 ## Exercise 4.x.11: Reference Triangle Interpolation
 
@@ -17,7 +16,7 @@ where $I$ is the Lagrange finite element interpolant.
 
 ### Solution
 
-This exercise establishes the fundamental interpolation error estimate on the reference element.
+The estimate bounds the interpolation error on the reference element.
 
 **Part 1: Setup**
 
@@ -96,7 +95,7 @@ $$\widehat{K} = \frac{1}{2}\begin{pmatrix}
 - $\nabla\phi_1 \cdot \nabla\phi_2 = (-1)(1) + (-1)(0) = -1$
 - $\nabla\phi_2 \cdot \nabla\phi_2 = 1^2 + 0^2 = 1$
 
-This is the **fundamental building block** for all 2D FEM assembly!
+This reference matrix is transformed and assembled over the mesh.
 
 ### Worked Example: Reference Triangle Computation
 
@@ -248,7 +247,7 @@ Therefore:
 
 $$|v|_{H^m(K)} \leq \widehat{C} h_K^{s-m} |v|_{H^s(K)}$$
 
-**Key insight**: The $h_K^{s-m}$ factor with $s < m$ gives $h_K^{-(\text{positive})}$, which blows up as $h \to 0$. This is why it's called an "inverse" inequality.
+The $h_K^{s-m}$ factor with $s < m$ gives $h_K^{-(\text{positive})}$, which blows up as $h \to 0$. This is why it's called an "inverse" inequality.
 
 ### Worked Example: Homogeneity Scaling
 
@@ -260,7 +259,7 @@ $$|v|_{H^m(K)} \leq \widehat{C} h_K^{s-m} |v|_{H^s(K)}$$
 
 ### Solution
 
-This fundamental result explains why fine meshes lead to ill-conditioned systems.
+The condition number grows as the mesh is refined.
 
 **Part 1: 1D Stiffness Matrix**
 
@@ -421,7 +420,7 @@ $$\|u - I_h u\|_{L^\infty} \leq \frac{h^m}{m!}\|u^{(m)}\|_{L^\infty}$$
 
 where $h = \max_i |x_{i+1} - x_i|$.
 
-**Key insight**: The error is $O(h^m)$, explaining why higher-degree polynomials give better approximation.
+The error is $O(h^m)$, explaining why higher-degree polynomials give better approximation.
 
 ## Exercise 4.x.6: Quasi-Uniform Meshes
 

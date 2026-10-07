@@ -331,12 +331,12 @@ def run_comparison(nx: int = 20,
     """
     Benchmark FEM-MAP vs Kaiser-Squires on a synthetic Gaussian lens survey.
 
-    New parameters vs original:
+    Mesh and prior options:
         wiener_length    : if > 0, use Matern prior R = M + l^2*K (recommend 0.5)
         use_adaptive_mesh: if True, refine mesh near mask boundary
         refine_factor    : adaptive refinement factor (3 = 3x finer near mask)
 
-    These can be combined: adaptive mesh + Wiener prior is the full upgrade.
+    The adaptive mesh and Wiener prior can be used together.
     """
     # ---- build mesh / operators -------------------------------------------
     prior_tag = f"Wiener(l={wiener_length})" if wiener_length > 0 else "H1"

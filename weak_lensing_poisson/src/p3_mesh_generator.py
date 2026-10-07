@@ -2,7 +2,7 @@
 P3 Mesh Generation for Cubic Triangular Elements
 
 Two generators:
-    generate_p3_structured_mesh   -- uniform structured grid (original, unchanged)
+    generate_p3_structured_mesh   -- uniform structured grid
     generate_p3_adaptive_mesh     -- locally refined near a circular mask boundary
 
 Both produce 10-node P3 elements with the node ordering:
@@ -90,7 +90,7 @@ def _elevate_to_p3(vertices: np.ndarray,
 
 
 # ============================================================================
-# Generator 1: Structured (original -- completely unchanged)
+# Generator 1: Structured
 # ============================================================================
 
 def generate_p3_structured_mesh(nx: int, ny: int,
@@ -347,7 +347,7 @@ def validate_p3_mesh(mesh):
 
 
 # ============================================================================
-# Visualisation helpers (original unchanged)
+# Visualisation helpers
 # ============================================================================
 
 def visualize_p3_mesh(mesh, filename='p3_mesh_structure.png',

@@ -3,7 +3,6 @@
 Plots are generated locally; see the [figure instructions](../../docs/GENERATED_FILES.md).
 
 Date: 2026-02-02
-Topics: Project
 
 Assembly timings for a 1D finite-element problem in Python, C, C++, Fortran, Julia, and Rust.
 
@@ -49,7 +48,7 @@ Assembly timings increase with mesh size:
 | 10,000 | 52.075 | 0.221 | 0.205 | 0.188 | 0.207 |
 | 20,000 | 156.295 | 0.566 | 0.547 | 0.531 | 0.531 |
 At n=20,000, C, C++, Fortran, and Rust each take less than 0.6 ms in the timed assembly call.
-## Implementation Highlights
+## Assembly and bindings
 ### Core Algorithm
 All implementations follow the same mathematical procedure from Brenner & Scott Section 0.4:
 **Element-wise Assembly Loop:**
@@ -75,7 +74,7 @@ enddo
 ```
 The Fortran wrapper receives column-major NumPy arrays.
 **Performance**: 0.531 ms (tied for fastest)
-### **Rust**: Memory-Safe Systems Programming
+### Rust
 ```rust
 let k_data = k_array.as_slice_mut().unwrap();
 for e in 2..=n {
@@ -88,7 +87,7 @@ for e in 2..=n {
 ```
 The Rust extension accesses NumPy arrays through PyO3 and the numpy crate.
 **Performance**: 0.531 ms (tied for fastest)
-### **C**: Explicit Low-Level Control
+### C
 ```c
 double* Kprev = K;
 double* Kcur = K + n;
@@ -103,7 +102,7 @@ for (int e = 2; e <= n; e++) {
 ```
 The C function writes into arrays supplied by its ctypes wrapper.
 **Performance**: 0.566 ms
-### **C++**: High-Level with pybind11
+### C++ and pybind11
 ```cpp
 auto K_buf = K_array.request();
 double* K_ptr = static_cast<double*>(K_buf.ptr);
@@ -158,6 +157,9 @@ For a compatible smooth manufactured solution, the expected P1 rates are:
 - **Max error**: $\|u - u_h\|_\infty = O(h^2)$
 ## Building & Running
 ### Quick Start
+
+Run from `fem_1d_benchmark/`:
+
 ```bash
 # Build all implementations
 make build
@@ -171,35 +173,18 @@ make plots
 # Run correctness tests
 make test
 ```
-### Individual Language Builds
+### Individual language builds
+
+From the repository root, inside `nix develop`:
+
 ```bash
-# C
-cd c && gcc -O3 -fPIC -shared -fopenmp -o fem_c.so fem_assembly.c -lgomp
-
-# C++
-cd cpp && c++ -O3 -Wall -shared -std=c++11 -fPIC -fopenmp \
-    $(python3 -m pybind11 --includes) \
-    fem_assembly.cpp -o fem_cpp$(python3-config --extension-suffix) -lgomp
-
-# Fortran
-cd fortran && f2py -c -m fem_fortran fem_assembly.f90 \
-    --f90flags="-fopenmp -O3" -lgomp
-
-# Rust
-cd rust && maturin develop --release
-
-# Julia (setup)
-pip install julia
-python3 -c "import julia; julia.install()"
+comphys-build fem --language c
+comphys-build fem --language cpp
+comphys-build fem --language fortran
+comphys-build fem --language rust
+comphys-build julia
 ```
-## Future Extensions
-### Potential Next Steps
-1. **Parallel Assembly**: Add OpenMP versions for C/C++/Fortran
-2. **GPU Acceleration**: Compare CUDA/HIP assembly with the CPU kernels
-3. **2D Extension**: Triangular elements for Poisson equation
-4. **Higher-Order Elements**: Piecewise quadratic basis functions
-5. **Adaptive Refinement**: Implement Section 0.8 algorithms
-6. **Sparse Matrix Formats**: CSR/COO for efficiency at scale
+
 ## What the Comparison Shows
 
 At n=20,000, the saved C, C++, Fortran, and Rust timings are about 276–294 times faster than the Python wrapper. This is a comparison of these implementations and their allocation/copy behavior. It does not establish a general ranking of the languages.

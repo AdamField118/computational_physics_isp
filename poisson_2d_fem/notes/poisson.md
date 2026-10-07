@@ -3,9 +3,8 @@
 Plots are generated locally; see the [figure instructions](../../docs/GENERATED_FILES.md).
 
 Date: 2026-02-04
-Topics: Project
 
-Finite element solver for the 2D Poisson equation with Dirichlet boundary conditions - achieving O(h²) convergence in L² norm.
+P1 finite elements for the 2D Poisson equation with homogeneous Dirichlet boundary conditions.
 
 ## The Problem
 
@@ -115,7 +114,7 @@ Using 3-point Gaussian quadrature for degree-2 accuracy.
 
 The table below is retained from the original write-up. The current Python driver uses a placeholder in `_compute_H1_seminorm`, so its reported H1 values do not yet verify the theoretical rate.
 
-After some debugging and such, we achieved **theoretical convergence rates**:
+The saved values are:
 
 | h      | Nodes | Elements | $L^2$ Error  | $L^2$ Rate | $H^1$ Error  | $H^1$ Rate |
 |--------|-------|----------|-----------|---------|-----------|---------|
@@ -125,32 +124,13 @@ After some debugging and such, we achieved **theoretical convergence rates**:
 | 0.112  | 77    | 123      | 3.08e-04  | 2.0     | 8.70e-03  | 1.0     |
 | 0.079  | 147   | 260      | 1.54e-04  | 2.0     | 6.15e-03  | 1.0     |
 
-- $\boldsymbol{L^2}$ **convergence**: O(h²) as predicted by Theorem 4.4.3  
-- $\boldsymbol{H^1}$ **convergence**: O(h) as predicted by theory
+The tabulated L² and H¹ columns have slopes near two and one, respectively. The H¹ slope is not a validation result because of the placeholder noted above.
 
 **Interpretation**: As we halve the mesh size $h$:
 - $L^2$ error decreases by factor of $\sim$4 (quadratic)
 - $H^1$ error decreases by factor of $\sim$2 (linear)
 
 These rates are the expected targets for a smooth solution on refined P1 meshes.
-
-
-
-## Future Extensions
-
-### Immediate Next Steps
-
-1. **Non-homogeneous Dirichlet BC**: $u = g(x,y)$ on $\partial\Omega$
-2. **Different domains**: L-shaped region (singularity testing)
-3. **Higher-order elements**: P2 triangles for O($h^3$) convergence
-
-### Advanced Extensions
-
-4. **Natural/Neumann BC**: $\frac{\partial u}{\partial n} = h$ on boundary
-5. **Mixed formulations**: Coupled systems  
-6. **Adaptive mesh refinement**: Error-driven h-refinement
-7. **Iterative solvers**: CG with multigrid preconditioning
-8. **Time-dependent**: Heat equation $\frac{\partial u}{\partial t} - \Delta u = f$
 
 
 

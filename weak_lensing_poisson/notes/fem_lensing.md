@@ -1,11 +1,10 @@
 # Finite Element Methods for Weak Gravitational Lensing: From Poisson's Equation to Mass Reconstruction
 
 Date: 2025-12-05
-Topics: Computational Astrophysics, FEM, Gravitational Lensing
 
-A complete derivation of the finite element method for solving the 2D lensing Poisson equation, from weak formulation through numerical implementation. Building the bridge between differential geometry and computational reconstruction.
+Notes on the weak formulation, triangular elements, and potential solve for weak lensing.
 
-## Abstract
+## Scope
 
 Weak gravitational lensing requires solving a 2D Poisson equation $\nabla^2\psi=2\kappa$ to compute the lensing potential from observed convergence maps. We derive the finite element method (FEM) for this problem from first principles: starting with the strong form PDE, deriving the weak (variational) formulation, discretizing with piecewise linear basis functions, assembling the global stiffness matrix, and solving for nodal potentials. The worked examples cover mesh generation, element assembly, and a Poisson solve.
 
@@ -13,7 +12,7 @@ Weak gravitational lensing requires solving a 2D Poisson equation $\nabla^2\psi=
 
 ### 1.1 Recap: From Einstein to Poisson
 
-In [this blog post](https://www.adamfield.org/pages/blog.html?blog=Weak+Gravitational+Lensing%3A+From+the+Geodesic+Equation+to+Mass+Reconstruction), we derived how light deflection in the weak-field limit leads to the lensing potential $\psi(\theta)$ satisfying:
+In the weak-field approximation, the lensing potential $\psi(\theta)$ satisfies:
 
 $$\nabla^2 \psi(\boldsymbol{\theta}) = 2\kappa(\boldsymbol{\theta}) \qquad\boldsymbol{(1)}$$
 
@@ -54,7 +53,7 @@ For computational domains, we typically use Dirichlet (easier to implement).
 
 ### 1.4 Why Not Just Use FFT?
 
-The Fast Fourier Transform (FFT) can solve the Poisson equation on a **regular grid** with **periodic boundary conditions**. Indeed, Kaiser-Squires inversion uses this! However:
+The Fast Fourier Transform (FFT) can solve the Poisson equation on a **regular grid** with **periodic boundary conditions**. Kaiser–Squires inversion uses Fourier-space derivatives.
 
 **FFT limitations**:
 - Requires rectangular domain with uniform spacing
@@ -68,7 +67,7 @@ The Fast Fourier Transform (FFT) can solve the Poisson equation on a **regular g
 - Flexible boundary conditions
 - Natural extension to curved surfaces (spherical sky)
 
-For GPU acceleration and adaptive meshing, FEM is ideal.
+Local refinement is useful when the mass distribution requires different spatial resolutions.
 
 ## 2. The Weak Formulation
 
@@ -118,11 +117,11 @@ This is the **weak form** of the Poisson equation.
 
 Where $H^1_0(\Omega)$ is the **Sobolev space** of functions with square-integrable first derivatives that vanish on the boundary.
 
-### 2.5 Why This Is Better
+### 2.5 Regularity and boundary conditions
 
 The weak form has several advantages:
 1. **Only first derivatives** appear (less smoothness required)
-2. **Symmetric bilinear form** $a(\psi,v) = \int\nabla\psi\cdot\nabla v$ (nice mathematical properties)
+2. **Symmetric bilinear form** $a(\psi,v) = \int\nabla\psi\cdot\nabla v$ (symmetric stiffness matrix)
 3. **Natural for FEM** (piecewise polynomials fit naturally)
 4. **Boundary conditions** automatically incorporated
 
@@ -692,12 +691,7 @@ where:
 
 ### 12.4 GPU Acceleration
 
-**Speedups** from JAX GPU:
-- Element assembly: $100\times$ (fully parallel)
-- CG iterations: $50\times$ (sparse matvec + vector ops)
-- Overall: $\sim 30$-$50\times$ for end-to-end pipeline
-
-For $10^6$ nodes, solve in seconds on V100 (vs. minutes on CPU).
+GPU performance depends on mesh size, matrix representation, and transfer costs. Benchmark assembly and the linear solve separately, then time the full reconstruction. No measured GPU speedup for this lensing pipeline is recorded here.
 
 ## 13. Connection to Neural Networks
 
@@ -766,11 +760,11 @@ For **real surveys**:
 
 **Monitor**: Check CG residual $\|K\psi - \mathbf{f}\| / \|\mathbf{f}\|$
 
-## 15. Summary and Next Steps
+## 15. Method comparison and open questions
 
-### 15.1 What We've Accomplished
+### 15.1 Equations and assembly
 
-We derived the complete FEM pipeline for weak lensing:
+The calculation proceeds through:
 
 1. **Weak formulation**: $\int\nabla\psi\cdot\nabla v = \int 2\kappa v$ (integration by parts)
 2. **Discretization**: Piecewise linear (or quadratic) basis functions
@@ -803,32 +797,7 @@ Reasons to use FEM include:
 - Adaptive resolution
 - Coupling with inverse problems
 
-### 15.3 Implementation Roadmap
-
-**Phase 1**: Basic solver
-- Uniform triangular mesh
-- P1 elements
-- Direct solver (Cholesky)
-- Validate on point mass
-
-**Phase 2**: GPU acceleration
-- JAX implementation
-- Sparse matrix COO format
-- CG solver
-- Benchmark vs. CPU
-
-**Phase 3**: Advanced features
-- Adaptive mesh refinement
-- P2 elements (for shear)
-- Preconditioned CG
-- Multi-lens planes
-
-**Phase 4**: Integration
-- Couple with shear measurement (ShearNet output $\to$ FEM input)
-- Bayesian inversion
-- Real data pipeline
-
-### 15.4 Open Challenges
+### 15.3 Open questions
 
 **Theoretical**:
 - Optimal mesh adaptation strategies for lensing
@@ -889,7 +858,7 @@ For GPU, **COO is fine** for assembly; convert to CSR for CG solve.
 
 ## References
 
-1. **Brenner, S. C., & Scott, L. R. (2008).** *The Mathematical Theory of Finite Element Methods* (3rd ed.). Springer. — The definitive FEM textbook.
+1. **Brenner, S. C., & Scott, L. R. (2008).** *The Mathematical Theory of Finite Element Methods* (3rd ed.). Springer.
 
 2. **Zienkiewicz, O. C., Taylor, R. L., & Zhu, J. Z. (2013).** *The Finite Element Method: Its Basis and Fundamentals* (7th ed.). Butterworth-Heinemann.
 

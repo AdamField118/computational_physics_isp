@@ -5,10 +5,9 @@ From the repository root:
 ```bash
 nix develop
 comphys-build
-comphys-check --built
 ```
 
-`nix develop` supplies the tools and Python packages. `comphys-build` compiles the native modules in place and initializes Julia's Python bridge. It stops on the first failed build. The check command runs small numerical examples and requires every implementation to load; it does not run the long benchmarks or overwrite saved results.
+`nix develop` supplies the tools and Python packages. `comphys-build` compiles the native modules in place and initializes Julia's Python bridge. It stops on the first failed build.
 
 The first entry downloads a substantial compiler/scientific-library environment. Later entries reuse the Nix store. The first Rust and Julia builds also need network access for their locked dependencies. Entering the shell itself does not run `pip`, alter a global Julia environment, or compile project code.
 
@@ -43,13 +42,12 @@ python weak_lensing_poisson/notes/generate_examples.py
 make -C fem_1d_benchmark plots
 ```
 
-Burgers and shallow-water directories contain plans and code sketches, not complete executable solvers. The environment covers the languages used there but cannot turn those sketches into runnable programs.
+The Burgers and shallow-water directories contain method notes and code sketches. They do not yet have executable solvers.
 
 You can also run without an interactive shell:
 
 ```bash
 nix develop --command comphys-build
-nix develop --command comphys-check --built
 ```
 
 Run these from the checkout. The helper commands locate the root through Git and work from its subdirectories. Paths containing spaces are supported. Weak-lensing scripts should use `run.sh`, which establishes their project import path and forwards all arguments.
@@ -79,7 +77,7 @@ Nix cannot install or repair the host kernel driver from a development shell. An
 - The default plotting backend is `Agg`, suitable for SSH, CI, and saved figures. `plt.show()` does not open a window with this backend. To use a GUI, select a supported installed backend before entering, for example `MPLBACKEND=TkAgg nix develop`, and provide a working display.
 - Thread counts default to one unless already set, avoiding accidental CPU oversubscription. For performance runs, set `OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, `JULIA_NUM_THREADS`, and `RAYON_NUM_THREADS` deliberately. These are not interchangeable with JAX/XLA's thread settings.
 - Do not run two builds of the same target in the same checkout concurrently. Use separate worktrees for simultaneous CPU/CUDA experiments.
-- `nix develop --offline` only works once the necessary Nix paths are cached. Cargo and Julia also need their own cached dependencies; the bundle includes lockfiles, not dependency binaries.
+- `nix develop --offline` only works once the necessary Nix paths are cached. Cargo and Julia also need their own cached dependencies; lockfiles alone are not enough for an offline build.
 
 If flakes are disabled in your Nix configuration:
 
@@ -87,12 +85,8 @@ If flakes are disabled in your Nix configuration:
 nix --extra-experimental-features 'nix-command flakes' develop
 ```
 
-For NixOS, the persistent setting is `nix.settings.experimental-features = [ "nix-command" "flakes" ];`. New flake files must be tracked by Git to appear in a Git-backed flake; they are already committed in the bundle.
+For NixOS, the persistent setting is `nix.settings.experimental-features = [ "nix-command" "flakes" ];`. New flake files must be tracked by Git to appear in a Git-backed flake.
 
-## Checks and limitations
-
-`comphys-check` checks tools, Python imports, a JIT computation, Triangle meshing, an in-memory PNG, and a small P3 forward/gradient calculation. `comphys-check --built` additionally compares the benchmark implementations and exercises the Poisson/OpenBLAS solver. Each FEM check runs in its own process to avoid module-name collisions. These are environment and binding checks, not a validation of every physical model or every parameter choice in the repository.
+## Documentation
 
 Sources for the environment mechanisms: [Nix development shells](https://nix.dev/manual/nix/latest/command-ref/new-cli/nix3-develop), [NumPy f2py Meson support](https://numpy.org/doc/stable/f2py/buildtools/meson.html), and [PyJulia installation](https://pyjulia.readthedocs.io/en/latest/installation.html).
-
-The bundled revision was tested on x86_64 Linux by entering the actual Nix shell, compiling all native targets, initializing Julia, and running `comphys-check --built`. Both FEM harnesses matched all six implementations; N-body comparisons included C, C++, Fortran, Rust, JAX, and both Julia interfaces. The P3 forward/gradient and Poisson/OpenBLAS checks passed. The CUDA shell was evaluated, but GPU execution was not tested because the validation machine had no NVIDIA GPU.

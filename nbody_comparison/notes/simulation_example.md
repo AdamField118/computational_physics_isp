@@ -1,6 +1,6 @@
 # Small-system simulation example
 
-The illustrative particle simulation was separate from the benchmark implementations. Its computational setup is retained here; use the Python implementations in [nbody](../nbody) for experiments.
+This example uses a sequential kick-and-drift update. The [benchmark implementations](../nbody) use Velocity Verlet, so their timings and accuracy should be assessed separately.
 
 | Parameter | Value or distribution |
 |---|---|
@@ -12,12 +12,12 @@ The illustrative particle simulation was separate from the benchmark implementat
 | Timestep | $0.1s$, with speed parameter $s$ from 0.1 to 3.0 |
 | Softening term added to squared distance | 0.1 |
 
-For each particle it computed
+For each particle, compute
 
 $$a_i=G\sum_{j\ne i}\frac{m_j(r_j-r_i)}{(|r_j-r_i|^2+0.1)^{3/2}},$$
 
-then updated $v_i\leftarrow v_i+a_i\Delta t$ and $r_i\leftarrow r_i+v_i\Delta t$. The loop updated particles in place, so later particles saw some positions from the new step. Although its comment called this simplified Velocity Verlet, it was a sequential kick-and-drift update without the second acceleration evaluation. It should not be used as evidence for the accuracy or speed of the benchmark's Velocity Verlet implementations.
+then update $v_i\leftarrow v_i+a_i\Delta t$ and $r_i\leftarrow r_i+v_i\Delta t$. Updating particles in place means later particles see some positions from the new step. This differs from Velocity Verlet, which evaluates acceleration again after updating all positions.
 
-Initial conditions were randomly regenerated on reset without a stored seed. The original display allowed pause, restart, particle-count changes, and timestep changes. These affect the experiment; camera movement, colors, and display lighting do not.
+The initial-condition distributions above do not specify a random seed. Set and record one when implementing this example so that runs can be compared.
 
-The [illustrative sample table](../results/illustrative_sample.json) is also separate from measured results. It supplied substitute values when the saved result file could not be loaded. Its timestamp was generated at display time, so no measurement timestamp can be recovered from it.
+The [illustrative sample table](../results/illustrative_sample.json) contains example timings, not measurements. It has no measurement timestamp; use [benchmark_results.json](../results/benchmark_results.json) for recorded timings.

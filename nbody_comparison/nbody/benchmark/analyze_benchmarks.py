@@ -1,5 +1,5 @@
 """
-Enhanced Analysis of N-Body Benchmark Results
+Analysis of N-Body Benchmark Results
 Plots timings and energy drift from the saved benchmark data
 
 Adam Field - Computational Physics ISP
@@ -70,7 +70,7 @@ class BenchmarkAnalyzer:
         print("=" * 70)
     
     def plot_scaling_comparison(self):
-        """Enhanced scaling plot with theoretical O(N²) lines"""
+        """Scaling plot with O(N²) reference lines"""
         print("Creating scaling comparison plot...")
         
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))

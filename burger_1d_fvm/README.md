@@ -1,6 +1,6 @@
-# 1D Burgers Equation: Finite Volume Plan
+# 1D Burgers Equation: Finite Volume Notes
 
-A Fortran/Python solver for studying shocks, Riemann solvers, and flux limiters. This folder currently contains the plan and code sketches below.
+Notes on shocks, Riemann solvers, and flux limiters for Burgers’ equation. The Fortran and Python code blocks are sketches, not a runnable solver.
 
 ## Mathematical Foundation
 
@@ -178,9 +178,9 @@ Typical: $\text{CFL} \in [0.5, 0.9]$ for stability.
 
 ---
 
-## Implementation Plan
+## Implementation sketches
 
-### Phase 1: Infrastructure
+### Infrastructure
 
 #### Fortran Modules
 
@@ -276,7 +276,7 @@ class BurgersSolver1D:
         pass
 ```
 
-### Phase 2: Riemann Solvers
+### Riemann Solvers
 
 **`riemann_solvers.f90`**
 ```fortran
@@ -325,7 +325,7 @@ end module
 
 **Testing**: Compare all three solvers on Riemann problem.
 
-### Phase 3: MUSCL Reconstruction
+### MUSCL Reconstruction
 
 **`reconstruction.f90`**
 ```fortran
@@ -389,7 +389,7 @@ end module
 
 **Testing**: Verify second-order convergence on smooth problems.
 
-### Phase 4: Time Integration
+### Time Integration
 
 **`time_stepping.f90`**
 ```fortran
@@ -478,7 +478,7 @@ contains
 end module
 ```
 
-### Phase 5: Python Interface
+### Python Interface
 
 **`python_interface.f90`**
 ```fortran
@@ -551,9 +551,9 @@ contains
 end module
 ```
 
-### Phase 6: Validation Suite
+### Validation Suite
 
-**Test cases to implement**:
+These test sketches describe checks for a completed solver:
 
 #### Test 1: Shock Formation
 ```python
@@ -644,7 +644,7 @@ def test_conservation():
     assert abs(mass_final - mass_init) < 1e-12
 ```
 
-### Phase 7: Visualization
+### Visualization
 
 **`python/visualization.py`**
 ```python
@@ -818,7 +818,7 @@ $$u(x, t) = \frac{1}{2}(u_L + u_R) - \frac{1}{2}(u_R - u_L) \tanh\left(\frac{(u_
 
 ---
 
-## Expected Results
+## Expected behavior
 
 ### Convergence Rates
 
@@ -834,62 +834,6 @@ $$u(x, t) = \frac{1}{2}(u_L + u_R) - \frac{1}{2}(u_R - u_L) \tanh\left(\frac{(u_
 3. **Limiter comparison** (side-by-side plots)
 4. **Convergence plots** (log-log error vs Δx)
 5. **Phase space** (u vs u_x showing shock steepening)
-
----
-
-## Deliverables
-
-### Code
-- [ ] Complete Fortran FVM solver
-- [ ] Python driver and analysis tools
-- [ ] f2py interface
-- [ ] Tests for fluxes, conservation, and convergence
-
-### Documentation
-- [ ] Mathematical derivation document
-- [ ] Code documentation (docstrings, comments)
-- [ ] User guide with examples
-- [ ] Validation report
-
-### Visualizations
-- [ ] 4+ benchmark result plots
-- [ ] Convergence study graphs
-- [ ] Saved parameter-comparison plots (optional)
-- [ ] Animation: shock formation
-
-### Blog Post
-- [ ] Project overview
-- [ ] Mathematical background
-- [ ] Implementation highlights
-- [ ] Results and validation
-- [ ] Comparison to FEM approach
-
----
-
-## Extensions & Next Steps
-
-### Immediate Extensions
-- [ ] Adaptive time stepping (error-based CFL)
-- [ ] Different boundary conditions (inflow, outflow, reflective)
-- [ ] Entropy fix for sonic points
-- [ ] Compare RK2 vs RK3 vs RK4
-
-### Advanced FVM
-- [ ] 2D Burgers equation
-- [ ] Discontinuous Galerkin methods
-- [ ] WENO reconstruction (5th order)
-- [ ] Adaptive mesh refinement
-
-### Applications
-- [ ] Traffic flow modeling
-- [ ] Gas dynamics (scalar Euler)
-- [ ] Reaction-advection equations
-
-### Bridge to CFD
-- [ ] Vector Burgers → Euler equations
-- [ ] Shallow water equations
-- [ ] Add source terms
-- [ ] Moving to systems
 
 ---
 

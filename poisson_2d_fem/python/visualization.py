@@ -1,6 +1,6 @@
 """
 Visualization utilities for 2D Poisson FEM solver
-Professional quality plots with dark theme
+Solution, mesh, and convergence plots
 """
 import numpy as np
 import matplotlib.pyplot as plt

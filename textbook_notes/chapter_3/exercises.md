@@ -3,7 +3,6 @@
 Chapter 3 Exercises: Finite Element Construction
 
 Date: 2026-01-30
-Topics: Exercises
 
 Examples of nodal basis functions for rectangles, triangles, and nonconforming elements
 

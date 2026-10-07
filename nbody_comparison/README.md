@@ -5,9 +5,9 @@ For a complete Linux toolchain, use the repository’s [Nix environment](../docs
 **Adam Field - Computational Physics Independent Study (ISP)**  
 **Worcester Polytechnic Institute**
 
-## Project Overview
+## Implementations
 
-This project implements the **same N-body gravitational simulation** in multiple languages and compares their performance characteristics:
+The benchmark compares seven implementations of the same gravitational N-body problem:
 
 - **JAX** (GPU-accelerated with JIT compilation)
 - **Fortran** (CPU with OpenMP parallelization)
@@ -17,7 +17,7 @@ This project implements the **same N-body gravitational simulation** in multiple
 - **Julia** (Python wrappers)
 - **Pure Python** (Baseline reference)
 
-All implementations use the **Velocity Verlet** integrator for time-stepping and compute pairwise gravitational forces with O(N²) complexity. The goal is to understand the performance tradeoffs between different computational approaches for the same physics problem.
+All implementations use the **Velocity Verlet** integrator for time-stepping and compute pairwise gravitational forces with O(N²) complexity. Timings include each implementation’s Python wrapper.
 
 ## Physics Background
 
@@ -52,7 +52,7 @@ Velocity Verlet is a symplectic integrator that conserves energy better than sim
 ### Computational Complexity
 
 - **Direct summation:** O(N²) per timestep (what we implement)
-- **Barnes-Hut tree:** O(N log N) (potential future optimization)
+- **Barnes-Hut tree:** O(N log N)
 
 ## Project Structure
 
@@ -62,69 +62,43 @@ Velocity Verlet is a symplectic integrator that conserves energy better than sim
 | `tests/` | Cross-implementation accuracy checks |
 | `results/` | Saved numerical data, plots, and summaries |
 | `notes/benchmark.md` | Physics and benchmark discussion |
-| `notes/project_plan.md` | Original implementation plan |
+| `notes/numerical_setup.md` | Equations and benchmark comparisons |
 | `notes/simulation_example.md` | Small-system demonstration algorithm |
 
-## Installation & Setup
+## Build and run
 
-### Prerequisites
-
-```bash
-# Python dependencies
-pip install numpy jax jaxlib matplotlib scipy
-
-# For GPU support (optional but recommended for JAX)
-pip install --upgrade "jax[cuda12]"  # For CUDA 12
-# or
-pip install --upgrade "jax[cuda11]"  # For CUDA 11
-```
-
-### Building Fortran Module
+Run from the repository root inside the Nix shell:
 
 ```bash
-cd nbody/fortran
-
-# Option 1: Using setup.py
-python setup.py build_ext --inplace
-
-# Option 2: Using f2py directly
-f2py -c nbody.f90 -m nbody_fortran_module --f90flags="-fopenmp" -lgomp
-
-# Copy the compiled .so file to benchmark directory
-cp nbody_fortran_module*.so ../benchmark/
+comphys-build nbody
+comphys-build julia
+python nbody_comparison/nbody/jax/nbody_jax.py
+python nbody_comparison/tests/test_accuracy.py
 ```
 
-## Running the Code
+The JAX example runs a seeded 100-particle system and reports timing and energy drift. JAX uses the CPU in the default shell; see [GPU setup](../docs/NIX.md#gpu-use) for CUDA.
 
-### Quick Start: JAX Implementation
+To rerun the benchmark:
 
 ```bash
-cd nbody/jax
-python nbody_jax.py
+python nbody_comparison/nbody/benchmark/benchmark.py
 ```
 
-This will:
-1. Create a random 100-particle system
-2. Simulate 1000 timesteps
-3. Report timing and energy conservation
+The driver uses 10, 50, 100, 500, and 1000 particles at 1000 steps each. It runs the available implementations, reports missing modules, and replaces `nbody_comparison/results/benchmark_results.json`. Keep a copy of that file if you want to compare against the saved run.
 
-### Running Benchmarks
+Plot the saved data without rerunning the simulation:
 
 ```bash
-cd nbody/benchmark
-python benchmark.py
+python nbody_comparison/nbody/benchmark/visualize.py nbody_comparison/results/benchmark_results.json
+python nbody_comparison/nbody/benchmark/analyze_benchmarks.py
 ```
-
-This will:
-- Test multiple particle counts (10, 50, 100, 500, 1000)
-- Test multiple timestep counts (100, 500, 1000, 5000)
-- Compare JAX vs Fortran performance
-- Generate plots in `results/`
-- Save JSON results for analysis
 
 ### Creating Visualizations
 
+Run this example from `nbody_comparison/`. To save an animation in the headless Nix shell, use `anim.save("trajectory.gif", writer="pillow")` in place of `plt.show()`.
+
 ```python
+import jax
 from nbody.jax.nbody_jax import create_random_system, simulate, NBodyConfig
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -148,77 +122,17 @@ anim = FuncAnimation(fig, update, frames=len(times), interval=50, blit=True)
 plt.show()
 ```
 
-## Implementation Details
+## Implementation details
 
-### JAX (GPU)
-
-**Strengths:**
-- JIT compilation for near-native speed
-- Automatic GPU acceleration
-- Vectorized operations (vmap)
-- Familiar NumPy-like syntax
-
-**Key Features:**
-- Uses `@jit` decorator for compilation
-- Pairwise force calculation via broadcasting
-- Can run on CPU or GPU transparently
-
-### Fortran (CPU + OpenMP)
-
-**Strengths:**
-- Excellent compiler optimizations
-- Native array operations
-- OpenMP parallel loops
-- Minimal overhead
-
-**Key Features:**
-- Double precision (`real(dp)`)
-- OpenMP parallelization of force loop
-- Column-major array layout (native to Fortran)
-- f2py exposes the Fortran routines to Python
+JAX broadcasts the pairwise displacement array and compiles the force calculation with `jit`. It runs on either CPU or GPU. The Fortran implementation uses double precision and OpenMP over particles; f2py exposes its routines to Python. C uses ctypes, C++ uses pybind11, Rust uses PyO3, and Julia has subprocess and PyJulia wrappers.
 
 ## Saved Results
 
 Timings and energy drift are recorded in `results/benchmark_results.json`. Compare implementations at the same particle count and number of steps; the GPU crossover depends on both the hardware and the CPU implementation.
 
-## Testing & Validation
+## Numerical checks
 
-### Accuracy Tests
-
-All implementations should produce **identical results** (within floating-point precision):
-
-```bash
-cd tests
-python test_accuracy.py
-```
-
-This verifies:
-- Force calculations match
-- Energy is conserved
-- Trajectories are identical
-
-### Performance Profiling
-
-```python
-# JAX profiling
-import jax.profiler
-jax.profiler.start_trace("./tensorboard")
-# ... run simulation ...
-jax.profiler.stop_trace()
-
-# Fortran profiling
-gprof ./nbody_fortran
-```
-
-## Future Extensions
-
-- [ ] Barnes-Hut tree algorithm (O(N log N))
-- [ ] Fast Multipole Method (O(N))
-- [ ] MPI parallelization across nodes
-- [ ] CUDA/HIP direct implementations
-- [ ] WebGPU for browser-based simulation
-- [ ] Collision detection
-- [ ] Relativistic corrections
+`tests/test_accuracy.py` compares energies, single steps, and trajectories for the available Python, JAX, C, C++, and Fortran implementations. It also reports energy drift over 1000 steps. Read the available-implementation list: missing modules are skipped, and this script does not cover Rust or Julia.
 
 ## References
 
@@ -231,9 +145,4 @@ gprof ./nbody_fortran
 
 **Adam Field**  
 Physics, Worcester Polytechnic Institute  
-Email: adfield@wpi.edu  
-
-
----
-
-*This project is part of my Computational Physics Independent Study at WPI, exploring high-performance computing techniques for astrophysical simulations.*
+Email: adfield@wpi.edu

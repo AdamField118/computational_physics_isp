@@ -41,9 +41,10 @@ $$\int_\Omega \nabla u \cdot \nabla v \, dx = \int_\Omega f v \, dx \quad \foral
 
 ## Quick Start
 
+Run these commands from `poisson_2d_fem/`.
+
 ### 1. Build
 ```bash
-make clean
 make build
 ```
 
@@ -53,9 +54,12 @@ make test
 ```
 
 ### 3. Python API
+
+Start Python in `poisson_2d_fem/python/`:
+
 ```python
-from python.fem_solver import PoissonSolver2D
-from python.manufactured_solutions import SineSolution
+from fem_solver import PoissonSolver2D
+from manufactured_solutions import SineSolution
 
 # Setup
 mms = SineSolution()
@@ -68,43 +72,26 @@ u = solver.solve()
 L2_error, H1_error, Linf_error = solver.compute_errors(mms.u_exact)
 
 # Visualize
-from python.visualization import plot_solution, plot_mesh
+from visualization import plot_solution, plot_mesh
 plot_solution(solver.mesh, u)
 plot_mesh(solver.mesh)
 ```
 
 ---
 
-## Project Structure
+## Files
 
-```
-poisson_2d_fem/
-├── fortran/                    # High-performance assembly/solve
-│   ├── types_module.f90        # Mesh data structures
-│   ├── reference_element.f90   # P1 basis functions, quadrature
-│   ├── assembly.f90            # Stiffness/load assembly
-│   ├── boundary_conditions.f90 # Dirichlet BC enforcement
-│   ├── solver.f90              # Linear system solver (LAPACK)
-│   └── python_interface.f90    # f2py wrapper
-├── python/                     # Driver and visualization
-│   ├── fem_solver.py           # Main solver class
-│   ├── mesh_generator.py       # Triangle interface
-│   ├── manufactured_solutions.py # MMS test cases
-│   ├── convergence_study.py    # Verification script
-│   └── visualization.py        # Plotting utilities
-├── docs/
-│   ├── THEORY.md               # Mathematical derivation
-│   ├── implementation_guide.md # Code walkthrough
-│   └── results/                # Convergence plots
-├── Makefile                    # Build system
-└── README.md
-```
-
----
+| Path | Contents |
+|---|---|
+| `fortran/` | P1 assembly, boundary conditions, LAPACK solver, and f2py signature |
+| `python/` | Mesh generation, manufactured solutions, convergence study, and plots |
+| [THEORY.md](THEORY.md) | Weak formulation and discretization |
+| [notes/poisson.md](notes/poisson.md) | Derivation and convergence discussion |
+| [results/convergence_snapshot.json](results/convergence_snapshot.json) | Saved numerical snapshot |
 
 ## Implementation Details
 
-### Fortran Backend (Performance-Critical)
+### Fortran assembly and solve
 
 **Stiffness Matrix Assembly:**
 ```fortran
@@ -135,7 +122,7 @@ F_i = ∫_K f φᵢ dx ≈ |det(B_K)| × Σ wq f(xq) φᵢ(xq)
 
 ## Verification Results
 
-The table below is retained from the original write-up. The current Python driver uses a placeholder in `_compute_H1_seminorm`, so its reported H1 values do not yet verify the theoretical rate.
+The saved table below has the expected L² and H¹ slopes, but `_compute_H1_seminorm` is a placeholder. Its H¹ values cannot verify convergence. See the [full snapshot](notes/convergence_snapshot.md) for the Linf values and limitations.
 
 Convergence study with manufactured solution `u = sin(πx)sin(πy)`:
 
@@ -147,14 +134,13 @@ Convergence study with manufactured solution `u = sin(πx)sin(πy)`:
 | 0.112  | 77    | 3.08e-04  | 2.0  | 8.70e-03  | 1.0  |
 | 0.079  | 147   | 1.54e-04  | 2.0  | 6.15e-03  | 1.0  |
 
-- **L² convergence:** O(h²) as predicted  
-- **H¹ convergence:** O(h) as predicted
+The theoretical targets for a sufficiently smooth solution are O(h²) in L² and O(h) in H¹.
 
 ---
 
 ## Manufactured Solutions
 
-Built-in test cases for verification:
+The manufactured-solutions module defines the following cases. The Fortran solve currently uses the sine source and homogeneous boundary data; the Python `f_source` and `g_boundary` arguments do not change that behavior.
 
 **Sine Solution** (smooth):
 ```python
@@ -162,7 +148,7 @@ u(x,y) = sin(πx) sin(πy)
 f(x,y) = 2π² sin(πx) sin(πy)
 ```
 
-**Polynomial Solution** (exact for P1):
+**Polynomial Solution**:
 ```python
 u(x,y) = x(1-x) y(1-y)
 f(x,y) = 2x(1-x) + 2y(1-y)
@@ -181,19 +167,6 @@ f(x,y) = 2x(1-x) + 2y(1-y)
 - Modern Fortran compiler (gfortran, ifort)
 - OpenBLAS or MKL (LAPACK)
 - f2py (comes with NumPy)
-
----
-
-## Future Extensions
-
-Planned enhancements:
-- [ ] L-shaped domain (singularity testing)
-- [ ] Non-homogeneous Dirichlet BC
-- [ ] Natural/Neumann boundary conditions
-- [ ] P2 (quadratic) elements
-- [ ] Adaptive mesh refinement
-- [ ] Iterative solvers (CG, multigrid)
-- [ ] Time-dependent problems (heat equation)
 
 ---
 

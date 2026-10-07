@@ -3,11 +3,8 @@
 Basic Concepts: Chapter 0
 
 Date: 2026-01-21
-Topics: Notes
 
-A one-dimensional introduction to the finite element method.
-
-Chapter 0 provides a one-dimensional introduction to the finite element method, serving as a microcosm of the entire book. The chapter develops the fundamental concepts through the lens of two-point boundary value problems, leaving some theoretical loose ends that motivate the study of Sobolev spaces in Chapter 1.
+Chapter 0 develops the finite element method through two-point boundary value problems. The weak formulation, Galerkin approximation, and error estimates lead into the Sobolev-space theory of Chapter 1.
 
 ## 0.1 Weak Formulation of Boundary Value Problems
 
@@ -327,7 +324,7 @@ $$r_{i+1} - \frac{1}{r_i} \text{ is small}$$
 
 where $r_i = h_i/h_{i-1}$ is the ratio of adjacent mesh intervals.
 
-**Important**: This allows **geometric mesh grading** ($x_i = e^{\delta(i-n)}$ for small $\delta$) while maintaining second-order convergence.
+This allows **geometric mesh grading** ($x_i = e^{\delta(i-n)}$ for small $\delta$) while maintaining second-order convergence.
 
 **Theorem 0.9.7** (Summary):
 - Without restrictions: $\|u - u_S\|_E \leq \frac{1}{\sqrt{2}} \|hu''\|$ and $\|u - u_S\| \leq \frac{1}{\sqrt{2}} \|h(u - u_S)'\|$

@@ -143,14 +143,8 @@ def compute_shear_p3(mesh, psi: np.ndarray,
             #
             # A = J_inv.T = J_correct^{-1}, so A[j, a] = ∂ref_j/∂x_a.
             #
-            # Correct einsum: H_phys[n,a,b] = Σ_{j,k} A[j,a] A[k,b] H_ref[n,j,k]
-            #                               ↑ 'ja,kb' — note index ORDER matters!
-            #
-            # BUG WAS: 'aj,bk,njk->nab' which uses A[a,j] instead of A[j,a].
-            # A is NOT symmetric for upper triangles (skewed J), so this was wrong
-            # for half the elements. Diagonal lower triangles have symmetric A,
-            # hiding the bug there. The fix is simply swapping the first two
-            # subscripts in the einsum string.
+            # H_phys[n,a,b] = sum_{j,k} A[j,a] A[k,b] H_ref[n,j,k].
+            # A need not be symmetric, so the index order matters on skew elements.
             H_phys = np.einsum('ja,kb,njk->nab', A, A, H_ref[local_i])  # (10,2,2)
 
             psi_xx = psi_e @ H_phys[:, 0, 0]

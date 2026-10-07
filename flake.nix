@@ -61,7 +61,6 @@
             pkgs.meson pkgs.ninja pkgs.cmake pkgs.cargo pkgs.rustc
             pkgs.maturin pkgs.julia_110-bin pkgs.git pkgs.ffmpeg-headless pkgs.util-linux
             (command "comphys-build" "build.py")
-            (command "comphys-check" "check_environment.py")
           ];
           # LAPACK calls in the Fortran sources use 32-bit INTEGER (LP64).
           buildInputs = [ pkgs.openblasCompat ];
@@ -96,7 +95,7 @@
             if [ -n "''${VIRTUAL_ENV:-}" ] || [ -n "''${CONDA_PREFIX:-}" ]; then
               echo "An outer Python environment is active; exit it before using this shell." >&2
             fi
-            echo "comphys: run comphys-build, then comphys-check --built. See docs/NIX.md."
+            echo "comphys: run comphys-build to compile the projects. See docs/NIX.md."
           '';
         };
     in {

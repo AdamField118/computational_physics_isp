@@ -8,7 +8,7 @@ Reading notes and exercise solutions for Brenner & Scott, *The Mathematical Theo
 | 3 | Construction of finite-element spaces | [Exercises](chapter_3/exercises.md), [worked examples](chapter_3/examples.md) |
 | 4 | [Transformation theory](chapter_4/chapter_4_notes.md) | [Exercises](chapter_4/chapter_4_exercises.md), [worked examples](chapter_4/examples.md) |
 
-The worked examples include scripts for local figures and explain inconsistencies encountered in the earlier demonstrations. The original exercise derivations are retained for study; the restructuring is not a mathematical review of every solution.
+The worked examples include figure scripts and notes on basis normalization, degree-of-freedom counts, and matrix conditioning.
 
 Regenerate all nine figures from the repository root:
 

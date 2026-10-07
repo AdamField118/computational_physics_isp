@@ -9,12 +9,8 @@ Uses 10-node cubic triangular elements with the 13-point Dunavant degree-7
 quadrature rule for exact integration of degree-6 polynomials (needed for
 the load vector when κ is also a cubic P3 field: Ni·κ is degree 6).
 
-BUG FIX (2026-03-01):
-    The previous order=5 quadrature rule had a degenerate S111 orbit.
-    Parameters (c,d) = (0.260…, 0.479…) satisfied 1-c-d = c, meaning
-    the 6 supposedly distinct S111 points collapsed to only 3 distinct
-    locations. The correct S111 parameters are (r4,s4,t4) where all
-    three barycentric coordinates are distinct.
+The S111 orbit requires three distinct barycentric coordinates; their six
+permutations give six distinct quadrature points.
 """
 
 import jax
@@ -107,13 +103,9 @@ def get_gauss_quadrature_triangle(order: int = 5):
         #   S1   orbit (centroid):  1 point
         #   S21  orbit 1 (r2):      3 points
         #   S21  orbit 2 (r3):      3 points
-        #   S111 orbit (r4,s4,t4):  6 points  ← was WRONG before this fix
+        #   S111 orbit (r4,s4,t4):  6 points
         #
-        # PREVIOUS BUG: the S111 parameters were (c,d) where 1-c-d = c,
-        # causing the orbit to degenerate into only 3 distinct points.
-        # The quadrature rule therefore only had 10 distinct points
-        # instead of 13, giving incorrect integration of degree-6
-        # polynomials and destroying P3 convergence.
+        # Repeated S111 coordinates collapse the orbit and invalidate the rule.
         # ----------------------------------------------------------------
 
         # S21 orbit parameters (small barycentric coordinate)
@@ -345,8 +337,7 @@ def apply_boundary_conditions_p3(K, F, mesh):
     Apply homogeneous Dirichlet BCs (ψ = 0 on ∂Ω) via direct substitution.
 
     Row i of K is replaced by the identity row, F[i] = 0 for all
-    boundary nodes i.  This is more numerically stable than the penalty
-    method previously used.
+    boundary nodes i.
     """
     boundary = np.array(mesh.boundary)
     print(f"Applying boundary conditions to {len(boundary)} nodes...")
